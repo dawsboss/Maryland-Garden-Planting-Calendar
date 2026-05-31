@@ -2,847 +2,627 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Central Maryland Planting Calendar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --soil: #2C1A0E;
-    --bark: #4A2C17;
-    --moss: #3D5A2A;
-    --leaf: #5C8A3C;
-    --sage: #8AAF72;
-    --sprout: #B8D89A;
-    --harvest: #D4A853;
-    --tomato: #C94F3A;
-    --sky: #7BAFC4;
-    --frost: #B8D4E8;
-    --cream: #F5EDD8;
-    --parchment: #EDE0C4;
-    --ink: #1A0F08;
+:root {
+  --soil: #2C1A0E; --bark: #3A2210; --bark2: #4A2C17;
+  --moss: #3D5A2A; --leaf: #5C8A3C; --sage: #8AAF72; --sprout: #B8D89A;
+  --harvest: #D4A853; --tomato: #C94F3A; --sky: #7BAFC4; --frost: #B8D4E8;
+  --cream: #F5EDD8; --parchment: #EDE0C4; --ink: #1A0F08;
+  --G: #5C8A3C; --S: #C94F3A; --T: #7B5EA7; --H: #D4A853;
+  --week-w: 18px; --name-w: 200px;
+  --header-h: 0px;
+}
+/* LIGHT MODE */
+body.light {
+  --soil: #F0E8D4; --bark: #E4D5B8; --bark2: #D8C8A0;
+  --cream: #2C1A0E; --parchment: #3A2210; --sage: #3D5A2A;
+  --sprout: #2C4A1A; --harvest: #8B6520;
+}
+body.light #weather-widget,
+body.light .filter-btn,
+body.light .controls { background: rgba(0,0,0,0.04); }
+body.light .crop-name { color: var(--cream); }
+body.light .month-header { background: var(--bark2); }
+body.light #detail-panel, body.light #weather-history, body.light #ai-panel { background: var(--bark); }
 
-    --G: #5C8A3C;
-    --S: #C94F3A;
-    --T: #7B5EA7;
-    --H: #D4A853;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--soil); color: var(--cream);
+  font-family: 'DM Sans', sans-serif; min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
 
-    --bar-h: 14px;
-    --week-w: 18px;
-  }
+/* ── FROST BANNER ── */
+#frost-banner {
+  display: none; align-items: center; gap: 12px;
+  padding: 10px 24px; font-size: 13px; font-weight: 500;
+  border-bottom: 1px solid rgba(180,160,120,0.2);
+}
+#frost-banner.show { display: flex; }
+#frost-banner.last-frost { background: rgba(92,138,60,0.15); color: var(--sprout); }
+#frost-banner.first-frost { background: rgba(123,175,196,0.15); color: var(--sky); }
+#frost-banner strong { font-weight: 700; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── HEADER ── */
+header {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; padding: 18px 28px 16px;
+  border-bottom: 1px solid rgba(180,160,120,0.2); gap: 16px;
+}
+.header-left { display: flex; flex-direction: column; gap: 3px; }
+.header-left .label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage); opacity: 0.8;
+}
+#today-display { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--harvest); }
+.site-title {
+  font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900;
+  color: var(--cream); text-align: center; letter-spacing: 0.02em; line-height: 1;
+}
+.site-subtitle {
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--sage); text-align: center; margin-top: 4px;
+}
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+#weather-widget {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(180,160,120,0.15);
+  border-radius: 8px; padding: 7px 12px; cursor: pointer; transition: background 0.2s;
+}
+#weather-widget:hover { background: rgba(255,255,255,0.09); }
+.weather-temp { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--harvest); }
+.weather-desc { font-size: 10px; color: var(--sprout); line-height: 1.4; }
+.weather-icon { font-size: 22px; }
+.icon-btn {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--parchment); font-size: 16px; width: 34px; height: 34px;
+  border-radius: 8px; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: background 0.2s; flex-shrink: 0;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.12); }
 
-  body {
-    background: var(--soil);
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* ── THIS WEEK DIGEST ── */
+#weekly-digest {
+  background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(180,160,120,0.15);
+  padding: 12px 28px; display: flex; gap: 16px; flex-wrap: wrap; align-items: stretch;
+}
+.digest-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(180,160,120,0.12);
+  border-radius: 10px; padding: 10px 16px; flex: 1; min-width: 140px; max-width: 260px;
+  cursor: pointer; transition: background 0.2s;
+}
+.digest-card:hover { background: rgba(255,255,255,0.08); }
+.digest-card .dc-label {
+  font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.18em; margin-bottom: 6px;
+}
+.dc-plant .dc-label { color: var(--leaf); }
+.dc-harvest .dc-label { color: var(--harvest); }
+.dc-notes .dc-label { color: var(--sky); }
+.digest-card .dc-count {
+  font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700;
+  line-height: 1; margin-bottom: 4px;
+}
+.dc-plant .dc-count { color: var(--sprout); }
+.dc-harvest .dc-count { color: var(--harvest); }
+.dc-notes .dc-count { color: var(--sky); font-size: 20px; }
+.digest-card .dc-list {
+  font-size: 11px; color: var(--parchment); opacity: 0.7;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
-  /* Grain overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
+/* ── LEGEND ── */
+.legend-bar {
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  padding: 8px 28px; background: rgba(0,0,0,0.18);
+  border-bottom: 1px solid rgba(180,160,120,0.1); flex-wrap: wrap;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--parchment); opacity: 0.8;
+}
+.legend-dot { width: 22px; height: 9px; border-radius: 3px; }
 
-  /* HEADER */
-  header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 24px 40px 20px;
-    border-bottom: 1px solid rgba(180,160,120,0.2);
-    gap: 20px;
-  }
+/* ── CONTROLS ── */
+.controls {
+  display: flex; align-items: center; gap: 10px; padding: 10px 28px;
+  background: rgba(0,0,0,0.15); border-bottom: 1px solid rgba(180,160,120,0.1);
+  flex-wrap: wrap;
+}
+.controls label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--sage); text-transform: uppercase; letter-spacing: 0.1em;
+}
+.search-box {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(180,160,120,0.25);
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  padding: 5px 10px; border-radius: 6px; outline: none; width: 180px; transition: border-color 0.2s;
+}
+.search-box:focus { border-color: var(--harvest); }
+.search-box::placeholder { color: rgba(200,180,140,0.4); }
+.filter-btn {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--parchment); font-family: 'DM Mono', monospace; font-size: 10px;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
+}
+.filter-btn:hover, .filter-btn.active { background: var(--moss); border-color: var(--leaf); color: var(--sprout); }
+.today-btn {
+  margin-left: auto; background: var(--harvest); border: none; color: var(--soil);
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;
+  text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap;
+}
+.today-btn:hover { opacity: 0.85; }
 
-  .header-left { display: flex; flex-direction: column; gap: 4px; }
-  .header-left .label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--sage);
-    opacity: 0.8;
-  }
+/* ── ZOOM SLIDER ── */
+.zoom-control {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--sage);
+}
+#zoom-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 80px; height: 4px; background: rgba(180,160,120,0.2);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+#zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  background: var(--harvest); border-radius: 50%; cursor: pointer;
+}
 
-  #today-display {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--harvest);
-  }
+/* ── CALENDAR ── */
+.calendar-wrapper { overflow-x: auto; overflow-y: visible; padding-bottom: 40px; }
+.calendar-scroll { position: relative; min-width: max-content; }
 
-  .site-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 900;
-    color: var(--cream);
-    text-align: center;
-    letter-spacing: 0.02em;
-    line-height: 1;
-  }
-  .site-subtitle {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--sage);
-    text-align: center;
-    margin-top: 5px;
-  }
+/* Sticky crop name column */
+.month-header, .week-numbers, .crop-row {
+  display: flex; align-items: stretch;
+}
+.crop-col-cell {
+  flex-shrink: 0; width: var(--name-w);
+  position: sticky; left: 0; z-index: 30;
+  background: var(--bark);
+  border-right: 2px solid rgba(180,160,120,0.25);
+  /* Ensure it always appears above scrolling bars */
+  isolation: isolate;
+}
+.week-numbers .crop-col-cell { background: var(--soil); }
+.crop-row .crop-col-cell { background: var(--soil); }
+.crop-row:hover .crop-col-cell { background: rgba(255,255,255,0.06) !important; }
+/* Harvest rows slightly darker */
+.harvest-row .crop-col-cell { background: rgba(0,0,0,0.12) !important; }
+.harvest-row:hover .crop-col-cell { background: rgba(255,255,255,0.04) !important; }
+/* Shadow on right edge of sticky column to show it's stuck */
+.crop-col-cell::after {
+  content: '';
+  position: absolute; top: 0; right: -8px; bottom: 0; width: 8px;
+  background: linear-gradient(to right, rgba(0,0,0,0.18), transparent);
+  pointer-events: none;
+}
 
-  .header-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-  }
+.month-header {
+  position: sticky; top: 0; z-index: 50; background: var(--bark);
+  border-bottom: 2px solid var(--harvest);
+}
+.month-header .crop-col-cell {
+  background: var(--bark) !important;
+  padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 0.15em; color: var(--sage);
+  display: flex; align-items: center;
+}
+.week-numbers .crop-col-cell { background: var(--soil) !important; }
+.months-row { display: flex; }
+.month-cell {
+  width: calc(var(--week-w) * 4); flex-shrink: 0; text-align: center;
+  padding: 8px 0 6px; font-family: 'DM Mono', monospace; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--parchment);
+  border-right: 1px solid rgba(180,160,120,0.2);
+}
 
-  #weather-widget {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(180,160,120,0.15);
-    border-radius: 8px;
-    padding: 8px 14px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  #weather-widget:hover { background: rgba(255,255,255,0.09); }
-  .weather-temp {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    color: var(--harvest);
-  }
-  .weather-desc {
-    font-size: 11px;
-    color: var(--sprout);
-    line-height: 1.4;
-  }
-  .weather-icon { font-size: 24px; }
+.week-numbers { position: sticky; top: 37px; z-index: 49; background: rgba(15,8,3,0.95); }
+.week-numbers .crop-col-cell { min-height: 18px; }
+.week-nums-row { display: flex; }
+.week-num-cell {
+  width: var(--week-w); flex-shrink: 0; text-align: center;
+  font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(200,180,140,0.3);
+  padding: 2px 0; border-right: 1px solid rgba(180,160,120,0.05);
+}
 
-  /* LEGEND */
-  .legend-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    padding: 10px 40px;
-    background: rgba(0,0,0,0.2);
-    border-bottom: 1px solid rgba(180,160,120,0.1);
-    flex-wrap: wrap;
-  }
-  .legend-item {
-    display: flex; align-items: center; gap: 7px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--parchment);
-    opacity: 0.8;
-  }
-  .legend-dot {
-    width: 24px; height: 10px;
-    border-radius: 3px;
-  }
+/* crop groups */
+.crop-group { border-bottom: 1px solid rgba(180,160,120,0.07); }
+.crop-group.hidden { display: none; }
+.crop-row { min-height: 26px; position: relative; transition: background 0.12s; }
+.crop-row:hover { background: rgba(255,255,255,0.025); }
+.crop-row:hover .crop-col-cell { background: rgba(255,255,255,0.04) !important; }
 
-  /* CONTROLS */
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 40px;
-    background: rgba(0,0,0,0.15);
-    border-bottom: 1px solid rgba(180,160,120,0.1);
-    flex-wrap: wrap;
-  }
+.crop-name {
+  padding: 3px 12px; font-size: 12px; font-weight: 500; color: var(--cream);
+  cursor: pointer; display: flex; align-items: center; gap: 5px; height: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.crop-name:hover { color: var(--harvest); }
+.harvest-name {
+  padding: 1px 12px; display: flex; align-items: center; height: 100%;
+}
+.row-type-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--sage); opacity: 0.5; text-transform: uppercase; flex-shrink: 0;
+}
+.asterisk { color: var(--harvest); font-size: 10px; }
+.has-note-dot {
+  width: 6px; height: 6px; background: var(--sky); border-radius: 50%; flex-shrink: 0;
+}
 
-  .controls label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--sage);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+/* bars area */
+.bars-area {
+  flex: 1; position: relative; display: flex; overflow: hidden;
+}
+.week-bg-cell {
+  width: var(--week-w); height: 100%; flex-shrink: 0;
+  border-right: 1px solid rgba(180,160,120,0.04);
+}
 
-  .search-box {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(180,160,120,0.25);
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    outline: none;
-    width: 220px;
-    transition: border-color 0.2s;
-  }
-  .search-box:focus { border-color: var(--harvest); }
-  .search-box::placeholder { color: rgba(200,180,140,0.4); }
+.bar {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 13px; border-radius: 3px; z-index: 2; opacity: 0.88;
+  transition: opacity 0.12s, filter 0.12s; cursor: pointer;
+}
+.bar:hover { opacity: 1; filter: brightness(1.18); }
+.bar-G { background: var(--G); }
+.bar-S { background: var(--S); }
+.bar-T { background: var(--T); }
+.bar-H { background: var(--H); height: 7px; opacity: 0.65; border-radius: 2px; }
 
-  .filter-btn {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(180,160,120,0.2);
-    color: var(--parchment);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .filter-btn:hover, .filter-btn.active {
-    background: var(--moss);
-    border-color: var(--leaf);
-    color: var(--sprout);
-  }
+.today-col-highlight {
+  position: absolute; top: 0; bottom: 0; width: var(--week-w);
+  background: rgba(212,168,83,0.055); pointer-events: none; z-index: 1;
+}
+.month-divider {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: rgba(180,160,120,0.14); pointer-events: none; z-index: 3;
+}
+.today-line {
+  position: absolute; top: 0; bottom: 0; width: 2px;
+  background: rgba(212,168,83,0.85); z-index: 20; pointer-events: none;
+  box-shadow: 0 0 10px rgba(212,168,83,0.45);
+}
+.today-line::before {
+  content: 'TODAY'; position: absolute; top: 4px; left: 4px;
+  font-family: 'DM Mono', monospace; font-size: 7px; color: var(--harvest);
+  white-space: nowrap; letter-spacing: 0.12em; background: var(--soil);
+  padding: 1px 4px; border-radius: 2px;
+}
 
-  .today-btn {
-    margin-left: auto;
-    background: var(--harvest);
-    border: none;
-    color: var(--soil);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .today-btn:hover { opacity: 0.85; }
+/* ── DETAIL PANEL ── */
+#detail-panel {
+  position: fixed; right: -430px; top: 0; bottom: 0; width: 410px;
+  background: var(--bark2); border-left: 1px solid rgba(180,160,120,0.2);
+  padding: 28px 24px; overflow-y: auto; z-index: 200;
+  transition: right 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
+  box-shadow: -20px 0 60px rgba(0,0,0,0.55);
+}
+#detail-panel.open { right: 0; }
+.panel-close {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--cream); font-size: 16px; width: 30px; height: 30px;
+  border-radius: 50%; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: background 0.2s;
+}
+.panel-close:hover { background: rgba(255,255,255,0.15); }
+.panel-crop-name {
+  font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700;
+  color: var(--cream); margin-bottom: 4px; padding-right: 36px;
+}
+.panel-season-badge {
+  display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 0.15em; padding: 3px 10px;
+  border-radius: 20px; margin-bottom: 16px;
+}
+.badge-cool { background: rgba(123,175,196,0.18); color: var(--sky); border: 1px solid rgba(123,175,196,0.3); }
+.badge-warm { background: rgba(201,79,58,0.18); color: #E07060; border: 1px solid rgba(201,79,58,0.3); }
+.panel-section { margin-bottom: 18px; }
+.panel-section-title {
+  font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.2em; color: var(--sage); margin-bottom: 7px;
+  padding-bottom: 4px; border-bottom: 1px solid rgba(180,160,120,0.15);
+}
+.panel-section p { font-size: 12px; line-height: 1.65; color: var(--parchment); opacity: 0.9; }
+.panel-timing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.timing-card {
+  background: rgba(0,0,0,0.2); border-radius: 7px; padding: 8px 10px;
+  border: 1px solid rgba(180,160,120,0.1);
+}
+.timing-card .tc-label { font-family: 'DM Mono', monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 3px; }
+.timing-card .tc-value { font-size: 11px; font-weight: 500; color: var(--cream); }
+.tc-G { color: var(--G); } .tc-T { color: var(--T); } .tc-H { color: var(--harvest); } .tc-S { color: var(--S); }
+.panel-links { display: flex; flex-direction: column; gap: 7px; }
+.panel-link {
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(180,160,120,0.15);
+  border-radius: 7px; text-decoration: none; color: var(--sprout); font-size: 11px;
+  transition: background 0.2s;
+}
+.panel-link:hover { background: rgba(255,255,255,0.1); color: var(--cream); }
+.status-indicator {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  border-radius: 7px; font-size: 12px; font-weight: 500; margin-bottom: 14px;
+}
+.status-now-plant { background: rgba(92,138,60,0.2); border: 1px solid rgba(92,138,60,0.4); color: var(--sprout); }
+.status-now-harvest { background: rgba(212,168,83,0.2); border: 1px solid rgba(212,168,83,0.4); color: var(--harvest); }
+.status-wait { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,160,120,0.15); color: rgba(200,180,140,0.55); }
 
-  /* CALENDAR WRAPPER */
-  .calendar-wrapper {
-    padding: 0 0 40px;
-    overflow-x: auto;
-  }
+/* companion planting */
+.companion-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.companion-tag {
+  font-size: 11px; padding: 3px 9px; border-radius: 20px; font-family: 'DM Mono', monospace;
+}
+.companion-good { background: rgba(92,138,60,0.2); color: var(--sprout); border: 1px solid rgba(92,138,60,0.3); }
+.companion-bad { background: rgba(201,79,58,0.15); color: #E07060; border: 1px solid rgba(201,79,58,0.3); }
 
-  .calendar-scroll {
-    min-width: 900px;
-    position: relative;
-  }
+/* crop notes */
+.crop-note-area {
+  width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  padding: 9px 11px; border-radius: 7px; resize: vertical; outline: none;
+  min-height: 72px; line-height: 1.55; transition: border-color 0.2s;
+}
+.crop-note-area:focus { border-color: var(--harvest); }
+.crop-note-area::placeholder { color: rgba(200,180,140,0.35); }
+.save-note-btn {
+  background: var(--moss); border: none; color: var(--cream);
+  font-family: 'DM Mono', monospace; font-size: 10px; padding: 6px 14px;
+  border-radius: 6px; cursor: pointer; margin-top: 7px; transition: background 0.2s;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.save-note-btn:hover { background: var(--leaf); }
+.note-saved-msg { font-size: 10px; color: var(--sage); margin-left: 8px; opacity: 0; transition: opacity 0.4s; }
+.note-saved-msg.show { opacity: 1; }
 
-  /* MONTH HEADER */
-  .month-header {
-    display: grid;
-    grid-template-columns: 220px repeat(44, var(--week-w));
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--bark);
-    border-bottom: 2px solid var(--harvest);
-  }
+/* MY GARDEN tab */
+#my-garden-panel {
+  position: fixed; left: -430px; top: 0; bottom: 0; width: 410px;
+  background: var(--bark2); border-right: 1px solid rgba(180,160,120,0.2);
+  z-index: 200; transition: left 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
+  box-shadow: 20px 0 60px rgba(0,0,0,0.55); display: flex; flex-direction: column;
+}
+#my-garden-panel.open { left: 0; }
+.garden-panel-header {
+  padding: 20px 24px 14px; border-bottom: 1px solid rgba(180,160,120,0.15);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.garden-panel-header h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--cream); }
+.garden-add-form {
+  padding: 12px 20px; border-bottom: 1px solid rgba(180,160,120,0.1);
+  display: flex; flex-direction: column; gap: 7px; flex-shrink: 0;
+}
+.garden-form-row { display: flex; gap: 7px; }
+.garden-select, .garden-date-input {
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  padding: 6px 9px; border-radius: 6px; outline: none; flex: 1;
+}
+.garden-select option { background: #2C1A0E; }
+.garden-add-btn {
+  background: var(--moss); border: none; color: var(--cream);
+  font-family: 'DM Mono', monospace; font-size: 10px; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; transition: background 0.2s;
+  text-transform: uppercase; white-space: nowrap;
+}
+.garden-add-btn:hover { background: var(--leaf); }
+.garden-entries { flex: 1; overflow-y: auto; padding: 10px 20px; }
+.garden-entry {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 0;
+  border-bottom: 1px solid rgba(180,160,120,0.08);
+}
+.garden-entry-info { flex: 1; }
+.ge-crop { font-size: 13px; font-weight: 500; color: var(--cream); margin-bottom: 3px; }
+.ge-planted { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--sage); margin-bottom: 4px; }
+.ge-countdown {
+  font-size: 11px; padding: 3px 8px; border-radius: 4px; display: inline-block;
+}
+.gc-harvest { background: rgba(212,168,83,0.2); color: var(--harvest); }
+.gc-ready { background: rgba(92,138,60,0.2); color: var(--sprout); }
+.gc-past { background: rgba(255,255,255,0.05); color: rgba(200,180,140,0.5); }
+.ge-delete {
+  background: none; border: none; color: rgba(200,100,80,0.4);
+  cursor: pointer; font-size: 14px; padding: 2px 5px; border-radius: 4px; transition: color 0.2s;
+}
+.ge-delete:hover { color: var(--tomato); }
+.garden-empty { font-size: 12px; color: rgba(200,180,140,0.4); padding: 24px 0; text-align: center; line-height: 1.7; }
 
-  .month-header .crop-col {
-    padding: 10px 16px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--sage);
-    border-right: 1px solid rgba(180,160,120,0.2);
-  }
+/* ── WEATHER PANEL ── */
+#weather-history {
+  position: fixed; top: 0; right: -500px; bottom: 0; width: 460px;
+  background: var(--bark2); border-left: 1px solid rgba(180,160,120,0.2);
+  z-index: 300; transition: right 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
+  display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.55);
+}
+#weather-history.open { right: 0; }
+.weather-panel-header {
+  padding: 20px 22px 14px; border-bottom: 1px solid rgba(180,160,120,0.15);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.weather-panel-header h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--cream); }
+.weather-log-form {
+  padding: 12px 22px; border-bottom: 1px solid rgba(180,160,120,0.1);
+  display: flex; gap: 7px; flex-wrap: wrap;
+}
+.weather-input {
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  padding: 6px 9px; border-radius: 6px; outline: none; flex: 1; min-width: 75px;
+}
+.weather-input:focus { border-color: var(--harvest); }
+.log-btn {
+  background: var(--moss); border: none; color: var(--cream);
+  font-family: 'DM Mono', monospace; font-size: 10px; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; transition: background 0.2s;
+  text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
+}
+.log-btn:hover { background: var(--leaf); }
+.weather-entries { flex: 1; overflow-y: auto; padding: 10px 22px; }
+.weather-entry {
+  display: grid; grid-template-columns: 86px 48px 1fr auto;
+  align-items: center; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid rgba(180,160,120,0.07); font-size: 11px;
+}
+.we-date { font-family: 'DM Mono', monospace; color: var(--sage); font-size: 10px; }
+.we-temp { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--harvest); }
+.we-note { color: var(--parchment); opacity: 0.75; }
+.we-delete {
+  background: none; border: none; color: rgba(200,100,80,0.4);
+  cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; transition: color 0.2s;
+}
+.we-delete:hover { color: var(--tomato); }
+.weather-chart { padding: 14px 22px; border-top: 1px solid rgba(180,160,120,0.1); }
+.chart-label {
+  font-family: 'DM Mono', monospace; font-size: 8px; text-transform: uppercase;
+  letter-spacing: 0.15em; color: var(--sage); margin-bottom: 7px;
+}
 
-  .month-cell {
-    text-align: center;
-    padding: 4px 0 2px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--sage);
-    border-right: 1px solid rgba(180,160,120,0.08);
-  }
+/* ── TOOLTIP ── */
+#tooltip {
+  position: fixed; background: rgba(22,12,4,0.97);
+  border: 1px solid rgba(180,160,120,0.3); border-radius: 8px;
+  padding: 9px 13px; font-size: 11px; pointer-events: none; z-index: 1000;
+  opacity: 0; transition: opacity 0.12s; max-width: 230px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+}
+#tooltip.visible { opacity: 1; }
+#tooltip .tt-crop { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--cream); margin-bottom: 3px; }
+#tooltip .tt-action { font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+#tooltip .tt-dates { font-size: 10px; color: var(--parchment); opacity: 0.75; }
 
-  .month-cell.month-start {
-    grid-column: span 4;
-    border-right: 1px solid rgba(180,160,120,0.25);
-    color: var(--parchment);
-    font-size: 9px;
-  }
+/* ── OVERLAY ── */
+#overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150;
+  opacity: 0; pointer-events: none; transition: opacity 0.28s;
+}
+#overlay.show { opacity: 1; pointer-events: all; }
 
-  .week-numbers {
-    display: grid;
-    grid-template-columns: 220px repeat(44, var(--week-w));
-    background: rgba(0,0,0,0.2);
-    border-bottom: 1px solid rgba(180,160,120,0.15);
-    position: sticky;
-    top: 41px;
-    z-index: 49;
-  }
-  .week-numbers .crop-col-spacer {
-    border-right: 1px solid rgba(180,160,120,0.2);
-  }
-  .week-num-cell {
-    text-align: center;
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    color: rgba(200,180,140,0.35);
-    padding: 2px 0;
-    border-right: 1px solid rgba(180,160,120,0.06);
-  }
+/* ── AI ── */
+#ai-fab {
+  position: fixed; bottom: 24px; right: 24px; width: 50px; height: 50px;
+  background: var(--harvest); border: none; border-radius: 50%; font-size: 20px;
+  cursor: pointer; z-index: 500; box-shadow: 0 4px 18px rgba(212,168,83,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#ai-fab:hover { transform: scale(1.08); box-shadow: 0 6px 26px rgba(212,168,83,0.5); }
+#ai-panel {
+  position: fixed; bottom: 84px; right: 24px; width: 350px; max-height: 500px;
+  background: var(--bark2); border: 1px solid rgba(180,160,120,0.25);
+  border-radius: 14px; z-index: 500; display: flex; flex-direction: column;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.6); overflow: hidden;
+  opacity: 0; transform: translateY(16px) scale(0.96); pointer-events: none;
+  transition: all 0.22s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+#ai-panel.open { opacity: 1; transform: none; pointer-events: all; }
+.ai-header {
+  padding: 14px 16px 10px; border-bottom: 1px solid rgba(180,160,120,0.14);
+  display: flex; align-items: center; gap: 8px;
+}
+.ai-header h3 { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--cream); flex: 1; }
+.ai-close {
+  background: none; border: none; color: rgba(200,180,140,0.5);
+  font-size: 16px; cursor: pointer; transition: color 0.2s; padding: 2px 5px;
+}
+.ai-close:hover { color: var(--cream); }
+.ai-messages {
+  flex: 1; overflow-y: auto; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px; min-height: 180px;
+}
+.ai-msg {
+  max-width: 88%; font-size: 12px; line-height: 1.58;
+  padding: 8px 11px; border-radius: 9px;
+}
+.ai-msg.user { align-self: flex-end; background: var(--moss); color: var(--cream); border-radius: 9px 9px 3px 9px; }
+.ai-msg.assistant { align-self: flex-start; background: rgba(0,0,0,0.22); color: var(--parchment); border: 1px solid rgba(180,160,120,0.11); border-radius: 9px 9px 9px 3px; }
+.ai-msg.thinking { opacity: 0.55; font-style: italic; }
+.ai-input-row { padding: 10px 12px; border-top: 1px solid rgba(180,160,120,0.11); display: flex; gap: 7px; }
+.ai-input {
+  flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(180,160,120,0.2);
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  padding: 7px 10px; border-radius: 7px; outline: none; resize: none;
+  min-height: 34px; max-height: 96px;
+}
+.ai-input:focus { border-color: var(--harvest); }
+.ai-send {
+  background: var(--harvest); border: none; color: var(--soil); font-size: 15px;
+  width: 34px; height: 34px; border-radius: 7px; cursor: pointer; transition: opacity 0.2s; flex-shrink: 0;
+}
+.ai-send:hover { opacity: 0.85; }
 
-  /* CROP ROWS */
-  .crop-group {
-    border-bottom: 1px solid rgba(180,160,120,0.08);
-  }
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.15); }
+::-webkit-scrollbar-thumb { background: rgba(180,160,120,0.28); border-radius: 3px; }
 
-  .crop-row {
-    display: grid;
-    grid-template-columns: 220px repeat(44, var(--week-w));
-    align-items: center;
-    min-height: 28px;
-    transition: background 0.15s;
-    position: relative;
-  }
-  .crop-row:hover { background: rgba(255,255,255,0.03); }
-  .crop-row.plant-row { min-height: 26px; }
-  .crop-row.harvest-row { min-height: 22px; background: rgba(0,0,0,0.07); }
+@media (max-width: 640px) {
+  header { grid-template-columns: 1fr; padding: 14px 16px; gap: 10px; }
+  .header-right { align-items: flex-start; }
+  .controls { padding: 8px 16px; gap: 7px; }
+  #ai-panel { width: calc(100vw - 32px); right: 16px; }
+  #detail-panel { width: 100%; right: -100%; }
+  #my-garden-panel { width: 100%; left: -100%; }
+  #weather-history { width: 100%; right: -100%; }
+  #weekly-digest { padding: 10px 16px; }
+  .digest-card { min-width: 120px; }
+  .site-title { font-size: 20px; }
+  .zoom-control { display: none; } /* hide zoom on small screens, use pinch instead */
+}
 
-  .crop-name {
-    padding: 4px 16px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--cream);
-    border-right: 1px solid rgba(180,160,120,0.2);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .crop-name:hover { color: var(--harvest); }
-  .crop-name .row-type-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    color: var(--sage);
-    opacity: 0.6;
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
-  .crop-name-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .asterisk { color: var(--harvest); font-size: 11px; }
-
-  .week-cell {
-    height: 100%;
-    border-right: 1px solid rgba(180,160,120,0.06);
-    position: relative;
-  }
-
-  /* Today line */
-  .today-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: rgba(212,168,83,0.8);
-    z-index: 40;
-    pointer-events: none;
-    box-shadow: 0 0 8px rgba(212,168,83,0.5);
-  }
-  .today-line::before {
-    content: 'TODAY';
-    position: absolute;
-    top: 0;
-    left: 3px;
-    font-family: 'DM Mono', monospace;
-    font-size: 8px;
-    color: var(--harvest);
-    white-space: nowrap;
-    letter-spacing: 0.1em;
-    background: var(--soil);
-    padding: 2px 4px;
-    border-radius: 2px;
-  }
-
-  /* Bars rendered inline */
-  .bar {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    height: var(--bar-h);
-    border-radius: 3px;
-    z-index: 2;
-    opacity: 0.9;
-    transition: opacity 0.15s, filter 0.15s;
-    cursor: pointer;
-  }
-  .bar:hover { opacity: 1; filter: brightness(1.15); }
-
-  .bar-G { background: var(--G); }
-  .bar-S { background: var(--S); }
-  .bar-T { background: var(--T); }
-  .bar-H { background: var(--H); height: 8px; opacity: 0.7; border-radius: 2px; }
-
-  .month-divider {
-    position: absolute;
-    top: 0; bottom: 0;
-    width: 1px;
-    background: rgba(180,160,120,0.18);
-    z-index: 3;
-    pointer-events: none;
-  }
-
-  /* TODAY STRIP across the whole calendar */
-  .today-col-highlight {
-    position: absolute;
-    top: 0; bottom: 0;
-    width: var(--week-w);
-    background: rgba(212,168,83,0.06);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  /* CROP DETAIL PANEL */
-  #detail-panel {
-    position: fixed;
-    right: -420px;
-    top: 0;
-    bottom: 0;
-    width: 400px;
-    background: var(--bark);
-    border-left: 1px solid rgba(180,160,120,0.2);
-    padding: 30px 28px;
-    overflow-y: auto;
-    z-index: 200;
-    transition: right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: -20px 0 60px rgba(0,0,0,0.5);
-  }
-  #detail-panel.open { right: 0; }
-
-  .panel-close {
-    position: absolute;
-    top: 16px; right: 16px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(180,160,120,0.2);
-    color: var(--cream);
-    font-size: 18px;
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
-  }
-  .panel-close:hover { background: rgba(255,255,255,0.15); }
-
-  .panel-crop-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--cream);
-    margin-bottom: 4px;
-    padding-right: 40px;
-  }
-
-  .panel-season-badge {
-    display: inline-block;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    padding: 3px 10px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-  }
-  .badge-cool { background: rgba(123,175,196,0.2); color: var(--sky); border: 1px solid rgba(123,175,196,0.3); }
-  .badge-warm { background: rgba(201,79,58,0.2); color: #E07060; border: 1px solid rgba(201,79,58,0.3); }
-
-  .panel-section {
-    margin-bottom: 20px;
-  }
-  .panel-section-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--sage);
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid rgba(180,160,120,0.15);
-  }
-  .panel-section p {
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--parchment);
-    opacity: 0.9;
-  }
-
-  .panel-timing-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .timing-card {
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    padding: 10px 12px;
-    border: 1px solid rgba(180,160,120,0.1);
-  }
-  .timing-card .tc-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 4px;
-  }
-  .timing-card .tc-value {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--cream);
-  }
-  .tc-G { color: var(--G); }
-  .tc-T { color: var(--T); }
-  .tc-H { color: var(--harvest); }
-  .tc-S { color: var(--S); }
-
-  .panel-links { display: flex; flex-direction: column; gap: 8px; }
-  .panel-link {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(180,160,120,0.15);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--sprout);
-    font-size: 12px;
-    transition: background 0.2s;
-  }
-  .panel-link:hover { background: rgba(255,255,255,0.1); color: var(--cream); }
-  .panel-link .link-icon { font-size: 16px; }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 16px;
-  }
-  .status-now-plant {
-    background: rgba(92,138,60,0.2);
-    border: 1px solid rgba(92,138,60,0.4);
-    color: var(--sprout);
-  }
-  .status-now-harvest {
-    background: rgba(212,168,83,0.2);
-    border: 1px solid rgba(212,168,83,0.4);
-    color: var(--harvest);
-  }
-  .status-wait {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(180,160,120,0.15);
-    color: rgba(200,180,140,0.6);
-  }
-
-  /* WEATHER HISTORY PANEL */
-  #weather-history {
-    position: fixed;
-    top: 0; right: -500px; bottom: 0;
-    width: 460px;
-    background: var(--bark);
-    border-left: 1px solid rgba(180,160,120,0.2);
-    z-index: 300;
-    transition: right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    display: flex;
-    flex-direction: column;
-    box-shadow: -20px 0 60px rgba(0,0,0,0.5);
-  }
-  #weather-history.open { right: 0; }
-
-  .weather-panel-header {
-    padding: 24px 24px 16px;
-    border-bottom: 1px solid rgba(180,160,120,0.15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .weather-panel-header h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    color: var(--cream);
-  }
-
-  .weather-log-form {
-    padding: 16px 24px;
-    border-bottom: 1px solid rgba(180,160,120,0.1);
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .weather-input {
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(180,160,120,0.2);
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    padding: 7px 10px;
-    border-radius: 6px;
-    outline: none;
-    flex: 1;
-    min-width: 80px;
-  }
-  .weather-input:focus { border-color: var(--harvest); }
-  .log-btn {
-    background: var(--moss);
-    border: none;
-    color: var(--cream);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 7px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-  .log-btn:hover { background: var(--leaf); }
-
-  .weather-entries {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 24px;
-  }
-
-  .weather-entry {
-    display: grid;
-    grid-template-columns: 80px 50px 1fr auto;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(180,160,120,0.08);
-    font-size: 12px;
-  }
-  .we-date { font-family: 'DM Mono', monospace; color: var(--sage); font-size: 11px; }
-  .we-temp { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--harvest); }
-  .we-note { color: var(--parchment); opacity: 0.8; }
-  .we-delete {
-    background: none;
-    border: none;
-    color: rgba(200,100,80,0.5);
-    cursor: pointer;
-    font-size: 14px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    transition: color 0.2s;
-  }
-  .we-delete:hover { color: var(--tomato); }
-
-  .weather-chart {
-    padding: 16px 24px;
-    border-top: 1px solid rgba(180,160,120,0.1);
-  }
-  .weather-chart canvas {
-    width: 100%; height: 100px;
-    display: block;
-  }
-  .chart-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--sage);
-    margin-bottom: 8px;
-  }
-
-  /* TOOLTIP */
-  #tooltip {
-    position: fixed;
-    background: rgba(30,18,8,0.97);
-    border: 1px solid rgba(180,160,120,0.3);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.15s;
-    max-width: 240px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-  }
-  #tooltip.visible { opacity: 1; }
-  #tooltip .tt-crop { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--cream); margin-bottom: 4px; }
-  #tooltip .tt-action { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-  #tooltip .tt-dates { font-size: 11px; color: var(--parchment); opacity: 0.8; }
-
-  /* OVERLAY */
-  #overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 150;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  #overlay.show { opacity: 1; pointer-events: all; }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-  ::-webkit-scrollbar-thumb { background: rgba(180,160,120,0.3); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(180,160,120,0.5); }
-
-  /* AI ASSISTANT */
-  #ai-fab {
-    position: fixed;
-    bottom: 28px; right: 28px;
-    width: 52px; height: 52px;
-    background: var(--harvest);
-    border: none;
-    border-radius: 50%;
-    font-size: 22px;
-    cursor: pointer;
-    z-index: 500;
-    box-shadow: 0 4px 20px rgba(212,168,83,0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  #ai-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(212,168,83,0.5); }
-
-  #ai-panel {
-    position: fixed;
-    bottom: 90px; right: 28px;
-    width: 360px;
-    max-height: 520px;
-    background: var(--bark);
-    border: 1px solid rgba(180,160,120,0.25);
-    border-radius: 16px;
-    z-index: 500;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-    pointer-events: none;
-    transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  #ai-panel.open {
-    opacity: 1; transform: none; pointer-events: all;
-  }
-
-  .ai-header {
-    padding: 16px 18px 12px;
-    border-bottom: 1px solid rgba(180,160,120,0.15);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .ai-header h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 16px;
-    color: var(--cream);
-    flex: 1;
-  }
-  .ai-close {
-    background: none; border: none;
-    color: rgba(200,180,140,0.5);
-    font-size: 18px; cursor: pointer;
-    transition: color 0.2s; padding: 2px 6px;
-  }
-  .ai-close:hover { color: var(--cream); }
-
-  .ai-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 200px;
-  }
-
-  .ai-msg {
-    max-width: 88%;
-    font-size: 12px;
-    line-height: 1.6;
-    padding: 9px 12px;
-    border-radius: 10px;
-  }
-  .ai-msg.user {
-    align-self: flex-end;
-    background: var(--moss);
-    color: var(--cream);
-    border-radius: 10px 10px 3px 10px;
-  }
-  .ai-msg.assistant {
-    align-self: flex-start;
-    background: rgba(0,0,0,0.25);
-    color: var(--parchment);
-    border: 1px solid rgba(180,160,120,0.12);
-    border-radius: 10px 10px 10px 3px;
-  }
-  .ai-msg.thinking { opacity: 0.6; font-style: italic; }
-
-  .ai-input-row {
-    padding: 12px 14px;
-    border-top: 1px solid rgba(180,160,120,0.12);
-    display: flex;
-    gap: 8px;
-  }
-  .ai-input {
-    flex: 1;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(180,160,120,0.2);
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    outline: none;
-    resize: none;
-    min-height: 36px;
-    max-height: 100px;
-  }
-  .ai-input:focus { border-color: var(--harvest); }
-  .ai-send {
-    background: var(--harvest);
-    border: none;
-    color: var(--soil);
-    font-size: 16px;
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-  }
-  .ai-send:hover { opacity: 0.85; }
-
-  /* hidden rows */
-  .crop-group.hidden { display: none; }
-
-  @media (max-width: 768px) {
-    header { grid-template-columns: 1fr; padding: 16px 20px; }
-    .controls { padding: 12px 20px; }
-    #ai-panel { width: calc(100vw - 40px); right: 20px; }
-    .site-title { font-size: 20px; }
-  }
+/* ── PRINT STYLES ── */
+@media print {
+  body { background: white !important; color: black !important; }
+  body::before { display: none; }
+  header, #frost-banner, #weekly-digest, .legend-bar, .controls,
+  #overlay, #detail-panel, #my-garden-panel, #weather-history,
+  #ai-fab, #ai-panel, #tooltip { display: none !important; }
+  .calendar-wrapper { overflow: visible !important; }
+  .calendar-scroll { min-width: 100% !important; }
+  :root { --week-w: 14px; --name-w: 160px; }
+  .month-header { background: #eee !important; color: black !important; position: relative !important; top: auto !important; }
+  .crop-col-cell { background: white !important; position: relative !important; left: auto !important; }
+  .crop-col-cell::after { display: none; }
+  .crop-name { color: black !important; }
+  .month-cell { color: black !important; }
+  .week-num-cell { color: #888 !important; }
+  .bar-G { background: #3d7a1e !important; }
+  .bar-S { background: #b03020 !important; }
+  .bar-T { background: #6040a0 !important; }
+  .bar-H { background: #c08820 !important; }
+  .today-line { background: rgba(180,120,0,0.7) !important; }
+  .today-col-highlight { display: none; }
+  .print-header { display: block !important; }
+}
+.print-header {
+  display: none;
+  text-align: center; padding: 8px 0 16px;
+  font-family: Georgia, serif; font-size: 18px; font-weight: bold;
+}
 </style>
 </head>
 <body>
 
+<!-- FROST BANNER -->
+<div id="frost-banner"></div>
+
+<!-- HEADER -->
 <header>
   <div class="header-left">
     <span class="label">Central Maryland · Last Frost May 1 · First Frost Oct 31</span>
-    <span id="today-display">Loading…</span>
+    <span id="today-display"></span>
   </div>
   <div>
     <div class="site-title">Garden Planting Calendar</div>
@@ -856,887 +636,869 @@
         <div class="weather-desc" id="w-desc">Click to log weather</div>
       </div>
     </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="toggleGardenPanel()" title="My Garden">🪴</button>
+      <button class="icon-btn" onclick="printCalendar()" title="Print calendar">🖨</button>
+      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">☀️</button>
+    </div>
   </div>
 </header>
 
+<!-- WEEKLY DIGEST -->
+<div id="weekly-digest">
+  <div class="digest-card dc-plant" onclick="setFilter('plant-now', document.querySelector('[data-f=plant-now]'))">
+    <div class="dc-label">Plant This Week</div>
+    <div class="dc-count" id="dig-plant-count">0</div>
+    <div class="dc-list" id="dig-plant-list">—</div>
+  </div>
+  <div class="digest-card dc-harvest" onclick="setFilter('harvest-now', document.querySelector('[data-f=harvest-now]'))">
+    <div class="dc-label">Harvest This Week</div>
+    <div class="dc-count" id="dig-harvest-count">0</div>
+    <div class="dc-list" id="dig-harvest-list">—</div>
+  </div>
+  <div class="digest-card dc-notes" onclick="toggleGardenPanel()">
+    <div class="dc-label">My Garden Tracked</div>
+    <div class="dc-count" id="dig-garden-count">0</div>
+    <div class="dc-list" id="dig-garden-list">Tap to manage →</div>
+  </div>
+</div>
+
+<!-- LEGEND -->
 <div class="legend-bar">
   <div class="legend-item"><div class="legend-dot" style="background:var(--G)"></div>Direct Sow (G)</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--S)"></div>Start Indoors (S)</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--T)"></div>Transplant Out (T)</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--H); height:8px"></div>Harvest (H)</div>
-  <div class="legend-item"><span style="color:var(--harvest)">★</span>&nbsp;Can be transplanted for earlier harvest</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--H);height:7px"></div>Harvest (H)</div>
+  <div class="legend-item"><span style="color:var(--harvest)">★</span>&nbsp;Transplant option</div>
+  <div class="legend-item"><span style="color:var(--sky);font-size:8px">●</span>&nbsp;Has notes</div>
 </div>
 
+<!-- CONTROLS -->
 <div class="controls">
   <label>Filter:</label>
   <input type="text" class="search-box" placeholder="Search crops…" oninput="filterCrops(this.value)" id="search-input">
-  <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-  <button class="filter-btn" onclick="setFilter('plant-now', this)">Plant Now</button>
-  <button class="filter-btn" onclick="setFilter('harvest-now', this)">Harvest Now</button>
-  <button class="filter-btn" onclick="setFilter('cool', this)">Cool Season</button>
-  <button class="filter-btn" onclick="setFilter('warm', this)">Warm Season</button>
+  <button class="filter-btn active" data-f="all" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" data-f="plant-now" onclick="setFilter('plant-now',this)">Plant Now</button>
+  <button class="filter-btn" data-f="harvest-now" onclick="setFilter('harvest-now',this)">Harvest Now</button>
+  <button class="filter-btn" data-f="cool" onclick="setFilter('cool',this)">Cool Season</button>
+  <button class="filter-btn" data-f="warm" onclick="setFilter('warm',this)">Warm Season</button>
+  <div class="zoom-control">
+    🔍<input type="range" id="zoom-slider" min="14" max="32" value="18" oninput="setZoom(this.value)">
+  </div>
   <button class="today-btn" onclick="scrollToToday()">⬆ Jump to Today</button>
 </div>
 
+<!-- CALENDAR -->
+<div class="print-header">Vegetable Planting Calendar — Central Maryland (Last Frost May 1 · First Frost Oct 31)</div>
 <div class="calendar-wrapper" id="calendar-wrapper">
-  <div class="calendar-scroll" id="calendar-scroll">
-    <!-- Built by JS -->
-  </div>
+  <div class="calendar-scroll" id="calendar-scroll"></div>
 </div>
 
+<!-- OVERLAY -->
 <div id="overlay" onclick="closeAllPanels()"></div>
+
+<!-- DETAIL PANEL -->
 <div id="detail-panel">
   <button class="panel-close" onclick="closeDetailPanel()">✕</button>
   <div id="detail-content"></div>
 </div>
 
+<!-- MY GARDEN PANEL -->
+<div id="my-garden-panel">
+  <div class="garden-panel-header">
+    <h2>🪴 My Garden</h2>
+    <button class="panel-close" style="position:static" onclick="toggleGardenPanel()">✕</button>
+  </div>
+  <div class="garden-add-form">
+    <div class="garden-form-row">
+      <select class="garden-select" id="garden-crop-select">
+        <option value="">Choose a crop…</option>
+      </select>
+    </div>
+    <div class="garden-form-row">
+      <input class="garden-date-input" id="garden-plant-date" type="date">
+      <button class="garden-add-btn" onclick="addGardenEntry()">+ Add</button>
+    </div>
+  </div>
+  <div class="garden-entries" id="garden-entries"></div>
+</div>
+
+<!-- WEATHER PANEL -->
 <div id="weather-history">
   <div class="weather-panel-header">
     <h2>🌡 Weather Log</h2>
     <button class="panel-close" style="position:static" onclick="toggleWeatherPanel()">✕</button>
   </div>
   <div class="weather-log-form">
-    <input class="weather-input" id="wl-date" type="date" style="max-width:130px">
-    <input class="weather-input" id="wl-temp" type="number" placeholder="°F" style="max-width:70px">
-    <input class="weather-input" id="wl-note" type="text" placeholder="e.g. partly cloudy, rain" style="flex:2">
+    <input class="weather-input" id="wl-date" type="date" style="max-width:128px">
+    <input class="weather-input" id="wl-temp" type="number" placeholder="°F" style="max-width:65px">
+    <input class="weather-input" id="wl-note" type="text" placeholder="e.g. sunny, light rain" style="flex:2">
     <button class="log-btn" onclick="addWeatherEntry()">Log</button>
   </div>
   <div class="weather-entries" id="weather-entries"></div>
   <div class="weather-chart">
     <div class="chart-label">Temperature history (°F)</div>
-    <canvas id="weather-canvas" height="100"></canvas>
+    <canvas id="weather-canvas" height="90"></canvas>
   </div>
 </div>
 
+<!-- TOOLTIP -->
 <div id="tooltip">
   <div class="tt-crop" id="tt-crop"></div>
   <div class="tt-action" id="tt-action"></div>
   <div class="tt-dates" id="tt-dates"></div>
 </div>
 
+<!-- AI -->
 <button id="ai-fab" onclick="toggleAI()" title="Garden Assistant">🌱</button>
 <div id="ai-panel">
   <div class="ai-header">
-    <span style="font-size:18px">🌱</span>
+    <span style="font-size:16px">🌱</span>
     <h3>Garden Assistant</h3>
     <button class="ai-close" onclick="toggleAI()">✕</button>
   </div>
   <div class="ai-messages" id="ai-messages">
-    <div class="ai-msg assistant">Hello! I'm your Central Maryland planting assistant. Ask me anything — what to plant this week, how to care for a crop, when to expect your harvest, or advice on weather and timing.</div>
+    <div class="ai-msg assistant">Hello! I'm your Central Maryland planting assistant. Ask me what to plant this week, how to care for a crop, companion planting tips, or anything about your garden.</div>
   </div>
   <div class="ai-input-row">
     <textarea class="ai-input" id="ai-input" placeholder="Ask about planting…" rows="1"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,96)+'px'"></textarea>
     <button class="ai-send" onclick="sendAI()">➤</button>
   </div>
 </div>
 
 <script>
-// ─── DATA ──────────────────────────────────────────────────────────────────────
-// Weeks 1–44 = Feb wk1 → Dec wk4 (months: Feb=0, Mar=4, Apr=8, May=12, Jun=16, Jul=20, Aug=24, Sep=28, Oct=32, Nov=36, Dec=40)
-// Each crop: { name, asterisk, season:'cool'|'warm', seedInfo, harvestInfo, links[], bars:[{type,start,end}] }
-// start/end are 0-indexed column positions (0 = Feb wk1)
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+// 44 columns = Feb wk1 → Dec wk4
+// col 0 = Feb w1, col 4 = Mar w1, col 8 = Apr w1, col 12 = May w1
+// col 16 = Jun w1, col 20 = Jul w1, col 24 = Aug w1, col 28 = Sep w1
+// col 32 = Oct w1, col 36 = Nov w1, col 40 = Dec w1
 
-const MONTH_STARTS = [0,4,8,12,16,20,24,28,32,36,40]; // Feb–Dec
 const MONTHS = ['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TYPE_LABELS = { G:'Direct Sow', S:'Start Indoors', T:'Transplant Out', H:'Harvest' };
+
+// Companion planting data
+const COMPANIONS = {
+  'Tomatoes':      { good:['Basil','Carrots','Parsley','Marigold'], bad:['Fennel','Cabbage','Brassicas'] },
+  'Beans, Snap':   { good:['Carrots','Squash','Cucumber','Radishes'], bad:['Onions','Fennel','Garlic'] },
+  'Beans, Lima':   { good:['Carrots','Squash','Cucumber'], bad:['Onions','Garlic'] },
+  'Carrots':       { good:['Tomatoes','Lettuce, Leaf','Onions','Chives'], bad:['Dill','Parsnips'] },
+  'Cabbage':       { good:['Dill','Onions','Potatoes','Chamomile'], bad:['Tomatoes','Grapes','Strawberries'] },
+  'Cucumber':      { good:['Beans, Snap','Peas','Radishes','Sunflowers'], bad:['Aromatic herbs','Potatoes'] },
+  'Lettuce, Leaf': { good:['Carrots','Radishes','Strawberries','Chives'], bad:['Celery','Parsley'] },
+  'Peppers':       { good:['Basil','Tomatoes','Carrots'], bad:['Fennel','Brassicas'] },
+  'Squash, Summer':{ good:['Beans, Snap','Corn','Radishes'], bad:['Potatoes'] },
+  'Kale':          { good:['Beets','Celery','Herbs'], bad:['Tomatoes','Beans, Snap','Strawberries'] },
+  'Onions':        { good:['Carrots','Beets','Kale','Lettuce, Leaf'], bad:['Beans, Snap','Peas'] },
+  'Beets':         { good:['Onions','Cabbage','Lettuce, Leaf'], bad:['Runner beans','Mustard Greens'] },
+  'Radishes':      { good:['Cucumber','Lettuce, Leaf','Peas','Nasturtium'], bad:['Hyssop'] },
+  'Peas':          { good:['Carrots','Radishes','Turnips','Spinach'], bad:['Onions','Garlic','Shallots'] },
+  'Broccoli':      { good:['Onions','Dill','Rosemary','Sage'], bad:['Tomatoes','Peppers','Strawberries'] },
+  'Spinach':       { good:['Peas','Strawberries','Brassicas'], bad:['Potatoes'] },
+  'Sweet Corn':    { good:['Beans, Snap','Squash, Summer','Cucumber'], bad:['Tomatoes'] },
+  'Garlic':        { good:['Tomatoes','Roses','Cabbage'], bad:['Peas','Beans, Snap','Asparagus'] },
+  'Potatoes':      { good:['Beans, Snap','Cabbage','Marigold'], bad:['Tomatoes','Squash, Summer','Fennel'] },
+};
+
+// Days to harvest from transplant/direct sow (approximate, for My Garden countdown)
+const DTH = {
+  'Arugula':40,'Asparagus':730,'Beans, Lima':75,'Beans, Snap':55,'Beets':60,
+  'Bitter Melon':80,'Bok Choy':45,'Broccoli':70,'Brussels Sprouts':100,'Cabbage':80,
+  'Cabbage, Chinese':50,'Callaloo':45,'Cantaloupe':80,'Carrots':70,'Cauliflower':75,
+  'Chard, Swiss':60,'Collards':80,'Cucumber':55,'Eggplant':70,'Garlic':240,
+  'Ground Cherries':75,'Hibiscus (Roselle)':120,'Jute Leaves':40,'Kale':55,'Kohlrabi':50,
+  'Leek':120,'Lettuce, Head':70,'Lettuce, Leaf':40,'Lettuce, Romaine':60,'Mustard Greens':40,
+  'Okra':55,'Onions':120,'Parsnips':110,'Peas':60,'Peas, Southern':65,'Peppers':75,
+  'Potatoes':90,'Pumpkins':100,'Radishes':28,'Shallots':90,'Soybeans (Edamame)':80,
+  'Spinach':45,'Squash, Summer':50,'Squash, Winter':90,'Sweet Corn':75,'Sweet Potatoes':110,
+  'Tomatillos':70,'Tomatoes':75,'Turnips':50,'Waterleaf':40,'Watermelon':85
+};
 
 const CROPS = [
-  {
-    name:'Arugula', asterisk:false, season:'cool',
-    seedInfo:'Direct sow in early spring and again in late summer. Thin to 6". Prefers cool temps; bolts in heat.',
-    harvestInfo:'Cut outer leaves when 3–4". Multiple cuts possible. Spring harvest runs Apr–Jun; fall Aug–Oct.',
+  { name:'Arugula', asterisk:false, season:'cool',
+    seedInfo:'Direct sow early spring as soon as ground can be worked. Thin to 6". Bolts in heat — perfect for fast spring and fall windows.',
+    harvestInfo:'Cut outer leaves when 3–4" tall. Harvest before plants flower for best flavor. Two full seasons possible.',
     links:[
-      {label:'UME Arugula Guide', url:'https://extension.umd.edu/resource/growing-salad-greens'},
-      {label:'Arugula recipes', url:'https://www.allrecipes.com/recipes/search/?q=arugula'},
+      {label:'UME: Grow It Eat It — Vegetables', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'UME: Home & Garden Info Center', url:'https://hgic.umd.edu/'},
+      {label:'Arugula recipes', url:'https://www.allrecipes.com/search?q=arugula'},
     ],
-    bars:[
-      {type:'G',start:4,end:7},{type:'H',start:8,end:15},
-      {type:'G',start:24,end:25},{type:'H',start:28,end:39},
-    ]
-  },
-  {
-    name:'Asparagus', asterisk:false, season:'cool',
-    seedInfo:'Plant crowns (transplants) in spring. Perennial — takes 2–3 years to establish. Very patient investment!',
-    harvestInfo:'Do NOT harvest year 1–2. Year 3+: harvest spears Apr–May before they fern out.',
+    bars:[{type:'G',start:4,end:7},{type:'H',start:8,end:15},{type:'G',start:24,end:25},{type:'H',start:28,end:39}] },
+  { name:'Asparagus', asterisk:false, season:'cool',
+    seedInfo:'Plant crowns (not seeds) in spring. Perennial — invest now, harvest for 20+ years. Needs well-drained bed with compost.',
+    harvestInfo:'Do NOT harvest year 1–2. Year 3+: cut spears at 6–8" before tips open. Stop harvesting when spears thin out in May.',
     links:[
-      {label:'UME Asparagus', url:'https://extension.umd.edu/resource/asparagus'},
-      {label:'Planting crowns', url:'https://extension.umd.edu/resource/vegetable-profile-asparagus'},
+      {label:'UME Asparagus Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Planting asparagus crowns', url:'https://extension.umd.edu/food/grow-it-eat-it/'},
     ],
-    bars:[
-      {type:'T',start:6,end:8},{type:'H',start:9,end:16},
-    ]
-  },
-  {
-    name:'Beans, Lima', asterisk:false, season:'warm',
-    seedInfo:'Direct sow after last frost (May 1). Needs warm soil >60°F. Plant 1" deep, 3–4" apart.',
-    harvestInfo:'Harvest pods when full and green, before they dry. Roughly July–August.',
+    bars:[{type:'T',start:6,end:8},{type:'H',start:9,end:16}] },
+  { name:'Beans, Lima', asterisk:false, season:'warm',
+    seedInfo:'Direct sow after last frost (May 1). Needs warm soil >60°F. Plant 1" deep, 3–4" apart in rows.',
+    harvestInfo:'Harvest pods when full and green, before they dry and turn white. ~July–August.',
     links:[
-      {label:'UME Beans', url:'https://extension.umd.edu/resource/lima-beans'},
-      {label:'Growing lima beans', url:'https://extension.umd.edu/resource/vegetable-profile-beans'},
+      {label:'UME Lima Beans', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Lima bean recipes', url:'https://www.allrecipes.com/search?q=lima+beans'},
     ],
-    bars:[
-      {type:'G',start:13,end:15},{type:'H',start:21,end:25},
-    ]
-  },
-  {
-    name:'Beans, Snap', asterisk:false, season:'warm',
-    seedInfo:'Direct sow after last frost. Succession plant every 2 weeks through June for continuous harvest.',
-    harvestInfo:'Pick pods when firm and snap cleanly. July–September.',
+    bars:[{type:'G',start:13,end:15},{type:'H',start:21,end:25}] },
+  { name:'Beans, Snap', asterisk:false, season:'warm',
+    seedInfo:'Direct sow after last frost. Succession plant every 2 weeks through June for continuous harvest. Bush types easiest.',
+    harvestInfo:'Pick pods when firm and snap cleanly. Never let mature on vine or production stops. July–September.',
     links:[
-      {label:'UME Snap Beans', url:'https://extension.umd.edu/resource/snap-beans-home-garden'},
-      {label:'Bean varieties', url:'https://extension.umd.edu/resource/vegetable-profile-beans'},
+      {label:'UME Snap Beans', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Bean recipes', url:'https://www.allrecipes.com/search?q=green+beans'},
     ],
-    bars:[
-      {type:'G',start:12,end:17},{type:'H',start:19,end:33},
-    ]
-  },
-  {
-    name:'Beets', asterisk:false, season:'cool',
-    seedInfo:'Direct sow early spring or late summer. Soak seeds overnight. Thin to 3". Both roots and greens edible.',
-    harvestInfo:'Roots ready at 1.5–3" diameter. Greens harvestable earlier.',
+    bars:[{type:'G',start:12,end:17},{type:'H',start:19,end:33}] },
+  { name:'Beets', asterisk:false, season:'cool',
+    seedInfo:'Direct sow early spring or late summer. Soak seeds overnight to speed germination. Thin carefully to 3". Both roots and greens edible.',
+    harvestInfo:'Roots ready at 1.5–3" diameter. Greens can be harvested earlier at any size.',
     links:[
-      {label:'UME Beets', url:'https://extension.umd.edu/resource/beets'},
-      {label:'Beet growing guide', url:'https://extension.umd.edu/resource/vegetable-profile-beets'},
+      {label:'UME Beets', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Beet recipes', url:'https://www.allrecipes.com/search?q=beets'},
     ],
-    bars:[
-      {type:'G',start:7,end:10},{type:'H',start:17,end:31},
-    ]
-  },
-  {
-    name:'Bitter Melon', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Needs a trellis. Popular in Asian cooking — acquired taste!',
-    harvestInfo:'Harvest when 4–6" long and still green. Turns red-orange when over-ripe.',
+    bars:[{type:'G',start:7,end:10},{type:'H',start:17,end:31}] },
+  { name:'Bitter Melon', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Nick seeds before soaking overnight. Needs a sturdy trellis. Popular in Asian cooking.',
+    harvestInfo:'Harvest at 4–6" long while still green and firm. Over-ripe fruit turns orange-red and bursts.',
     links:[
-      {label:'Bitter melon guide', url:'https://extension.umd.edu/resource/bitter-melon'},
+      {label:'UME Bitter Melon', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Bitter melon recipes', url:'https://www.allrecipes.com/search?q=bitter+melon'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:21,end:33},
-    ]
-  },
-  {
-    name:'Bok Choy', asterisk:true, season:'cool',
-    seedInfo:'Direct sow spring and fall. Bolts in heat. Best in cool weather. Fast grower (45 days).',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:21,end:33}] },
+  { name:'Bok Choy', asterisk:true, season:'cool',
+    seedInfo:'Direct sow spring and fall. Bolts quickly in heat — best as a spring or fall crop. Fast grower at 45 days.',
     harvestInfo:'Cut at base when heads form. Spring: May–Jun; Fall: Sep–Nov.',
     links:[
-      {label:'UME Bok Choy', url:'https://extension.umd.edu/resource/bok-choy'},
+      {label:'UME Asian Vegetables', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Bok choy recipes', url:'https://www.allrecipes.com/search?q=bok+choy'},
     ],
-    bars:[
-      {type:'G',start:5,end:9},{type:'H',start:13,end:19},
-      {type:'G',start:24,end:26},{type:'H',start:28,end:39},
-    ]
-  },
-  {
-    name:'Broccoli', asterisk:false, season:'cool',
-    seedInfo:'Start seeds indoors 6–8 weeks before transplant date. Needs cool temps for head formation.',
-    harvestInfo:'Cut central head before flowers open. Side shoots continue producing.',
+    bars:[{type:'G',start:5,end:9},{type:'H',start:13,end:19},{type:'G',start:24,end:26},{type:'H',start:28,end:39}] },
+  { name:'Broccoli', asterisk:false, season:'cool',
+    seedInfo:'Start seeds indoors 6–8 weeks before transplant. Needs cool temps for head formation. Feed nitrogen-rich fertilizer.',
+    harvestInfo:'Cut central head before flowers open — yellow = too late. Side shoots continue producing for weeks.',
     links:[
-      {label:'UME Broccoli', url:'https://extension.umd.edu/resource/broccoli'},
-      {label:'Broccoli profile', url:'https://extension.umd.edu/resource/vegetable-profile-broccoli'},
+      {label:'UME Broccoli Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Broccoli recipes', url:'https://www.allrecipes.com/search?q=broccoli'},
     ],
-    bars:[
-      {type:'S',start:2,end:3},{type:'T',start:7,end:9},{type:'H',start:13,end:17},
-      {type:'S',start:19,end:20},{type:'T',start:23,end:25},{type:'H',start:36,end:39},
-    ]
-  },
-  {
-    name:'Brussels Sprouts', asterisk:false, season:'cool',
-    seedInfo:'Start indoors in spring for fall harvest. Long season crop — 80–100 days. Sweetens after frost.',
-    harvestInfo:'Harvest from bottom up when sprouts reach 1–1.5". Best after first light frost in fall.',
+    bars:[{type:'S',start:2,end:3},{type:'T',start:7,end:9},{type:'H',start:13,end:17},{type:'S',start:19,end:20},{type:'T',start:23,end:25},{type:'H',start:36,end:39}] },
+  { name:'Brussels Sprouts', asterisk:false, season:'cool',
+    seedInfo:'Start indoors in spring for fall harvest. Long season (80–100 days). Sweetens dramatically after first frost — worth the wait!',
+    harvestInfo:'Harvest from bottom up when sprouts reach 1–1.5". Best after light frost in fall.',
     links:[
-      {label:'UME Brussels Sprouts', url:'https://extension.umd.edu/resource/brussels-sprouts'},
+      {label:'UME Brussels Sprouts', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Brussels sprout recipes', url:'https://www.allrecipes.com/search?q=brussels+sprouts'},
     ],
-    bars:[
-      {type:'S',start:8,end:9},{type:'T',start:17,end:20},{type:'H',start:28,end:36},
-    ]
-  },
-  {
-    name:'Cabbage', asterisk:false, season:'cool',
-    seedInfo:'Start indoors 6–8 weeks before transplant. Two crops: spring and fall.',
+    bars:[{type:'S',start:8,end:9},{type:'T',start:17,end:20},{type:'H',start:28,end:36}] },
+  { name:'Cabbage', asterisk:false, season:'cool',
+    seedInfo:'Start indoors 6–8 weeks before transplant. Two crops: spring and fall. Space 12–18" apart. Needs consistent moisture.',
     harvestInfo:'Harvest when heads are firm and full. Spring: Jun–Jul; Fall: Sep–Nov.',
     links:[
-      {label:'UME Cabbage', url:'https://extension.umd.edu/resource/cabbage'},
+      {label:'UME Cabbage Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Cabbage recipes', url:'https://www.allrecipes.com/search?q=cabbage'},
     ],
-    bars:[
-      {type:'S',start:2,end:3},{type:'T',start:7,end:9},{type:'H',start:15,end:19},
-      {type:'S',start:18,end:20},{type:'T',start:22,end:25},{type:'H',start:28,end:38},
-    ]
-  },
-  {
-    name:'Cabbage, Chinese', asterisk:true, season:'cool',
-    seedInfo:'Direct sow spring and fall. Bolts in heat. Best as fall crop. Thin to 12".',
-    harvestInfo:'Cut at soil level when heads firm up. Spring: May–Jun; Fall: Sep–Nov.',
+    bars:[{type:'S',start:2,end:3},{type:'T',start:7,end:9},{type:'H',start:15,end:19},{type:'S',start:18,end:20},{type:'T',start:22,end:25},{type:'H',start:28,end:38}] },
+  { name:'Cabbage, Chinese', asterisk:true, season:'cool',
+    seedInfo:'Direct sow spring and fall. Best as a fall crop. Thin to 12" spacing.',
+    harvestInfo:'Cut at soil level when heads firm. Spring: May–Jun; Fall: Sep–Nov.',
     links:[
-      {label:'Chinese Cabbage guide', url:'https://extension.umd.edu/resource/chinese-cabbage'},
+      {label:'UME Chinese Cabbage', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Napa cabbage recipes', url:'https://www.allrecipes.com/search?q=napa+cabbage'},
     ],
-    bars:[
-      {type:'G',start:7,end:10},{type:'H',start:13,end:17},
-      {type:'G',start:25,end:27},{type:'H',start:31,end:39},
-    ]
-  },
-  {
-    name:'Callaloo', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Caribbean green — heat tolerant. Grows fast in summer.',
+    bars:[{type:'G',start:7,end:10},{type:'H',start:13,end:17},{type:'G',start:25,end:27},{type:'H',start:31,end:39}] },
+  { name:'Callaloo', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Caribbean green — heat tolerant and fast-growing. Grows like amaranth.',
     harvestInfo:'Harvest young tender leaves and stems continuously through summer.',
     links:[
-      {label:'Callaloo growing', url:'https://extension.umd.edu/resource/callaloo'},
+      {label:'UME Callaloo', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Callaloo recipes', url:'https://www.allrecipes.com/search?q=callaloo'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:17,end:33},
-    ]
-  },
-  {
-    name:'Cantaloupe', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost in hills. Needs warm soil and full sun. Allow 6 sq ft per plant.',
-    harvestInfo:'Ready when stem slips easily from vine and netting is raised. Jul–Sep.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:17,end:33}] },
+  { name:'Cantaloupe', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost in hills. Needs warm soil and full sun. Allow 6+ sq ft per plant. Loves heat.',
+    harvestInfo:'Ready when stem slips easily from vine with gentle pressure and netting is fully raised. Jul–Sep.',
     links:[
-      {label:'UME Melons', url:'https://extension.umd.edu/resource/cantaloupes'},
+      {label:'UME Cantaloupes', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Cantaloupe growing tips', url:'https://extension.umd.edu/food/grow-it-eat-it/'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:22,end:30},
-    ]
-  },
-  {
-    name:'Carrots', asterisk:false, season:'cool',
-    seedInfo:'Direct sow in loose, deep soil. Keep moist until germination (2–3 weeks). Thin carefully.',
-    harvestInfo:'Ready when shoulders show at soil surface. Store in ground through hard frost.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:22,end:30}] },
+  { name:'Carrots', asterisk:false, season:'cool',
+    seedInfo:'Direct sow in loose, deep, rock-free soil. Keep moist until germination (2–3 weeks). Thin to 2" — painful but necessary.',
+    harvestInfo:'Ready when shoulders show at soil surface. Can leave in ground through light frosts.',
     links:[
-      {label:'UME Carrots', url:'https://extension.umd.edu/resource/carrots'},
+      {label:'UME Carrots Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Carrot recipes', url:'https://www.allrecipes.com/search?q=carrots'},
     ],
-    bars:[
-      {type:'G',start:6,end:10},{type:'H',start:16,end:20},
-      {type:'G',start:25,end:27},{type:'H',start:32,end:38},
-    ]
-  },
-  {
-    name:'Cauliflower', asterisk:false, season:'cool',
-    seedInfo:'Start indoors, transplant like broccoli. "Blanch" heads by tying outer leaves over head.',
-    harvestInfo:'Harvest when heads are compact and white/colored. Before they become ricey.',
+    bars:[{type:'G',start:6,end:10},{type:'H',start:16,end:20},{type:'G',start:25,end:27},{type:'H',start:32,end:38}] },
+  { name:'Cauliflower', asterisk:false, season:'cool',
+    seedInfo:'Start indoors, transplant like broccoli. Tie outer leaves over head when 2" wide to blanch (keeps white).',
+    harvestInfo:'Harvest when heads are compact and white. Before they open up ("rice"). Spring and fall.',
     links:[
-      {label:'UME Cauliflower', url:'https://extension.umd.edu/resource/cauliflower'},
+      {label:'UME Cauliflower', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Cauliflower recipes', url:'https://www.allrecipes.com/search?q=cauliflower'},
     ],
-    bars:[
-      {type:'S',start:2,end:3},{type:'T',start:7,end:8},{type:'H',start:12,end:15},
-      {type:'S',start:19,end:20},{type:'T',start:23,end:25},{type:'H',start:34,end:38},
-    ]
-  },
-  {
-    name:'Chard, Swiss', asterisk:false, season:'cool',
-    seedInfo:'Direct sow spring. Tolerates heat better than spinach. Cut-and-come-again.',
+    bars:[{type:'S',start:2,end:3},{type:'T',start:7,end:8},{type:'H',start:12,end:15},{type:'S',start:19,end:20},{type:'T',start:23,end:25},{type:'H',start:34,end:38}] },
+  { name:'Chard, Swiss', asterisk:false, season:'cool',
+    seedInfo:'Direct sow spring. Tolerates heat better than spinach. Cut-and-come-again. Colorful stems are ornamental.',
     harvestInfo:'Harvest outer stalks when 8–10". Very long harvest window May–Oct.',
     links:[
-      {label:'UME Swiss Chard', url:'https://extension.umd.edu/resource/swiss-chard'},
+      {label:'UME Swiss Chard', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Swiss chard recipes', url:'https://www.allrecipes.com/search?q=swiss+chard'},
     ],
-    bars:[
-      {type:'G',start:7,end:10},{type:'H',start:14,end:32},
-    ]
-  },
-  {
-    name:'Collards', asterisk:false, season:'cool',
-    seedInfo:'Start indoors or direct sow. Very heat and cold tolerant. Classic Southern green.',
-    harvestInfo:'Harvest lower leaves. Flavor improves after frost. Sep–Jan.',
+    bars:[{type:'G',start:7,end:10},{type:'H',start:14,end:32}] },
+  { name:'Collards', asterisk:false, season:'cool',
+    seedInfo:'Start indoors or direct sow. Very heat and cold tolerant — Maryland\'s most reliable green.',
+    harvestInfo:'Harvest lower leaves. Flavor improves dramatically after frost. Sep–Jan.',
     links:[
-      {label:'UME Collards', url:'https://extension.umd.edu/resource/collards'},
+      {label:'UME Collards Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Collard greens recipes', url:'https://www.allrecipes.com/search?q=collard+greens'},
     ],
-    bars:[
-      {type:'S',start:2,end:3},{type:'T',start:7,end:9},{type:'H',start:13,end:17},
-      {type:'S',start:19,end:21},{type:'T',start:24,end:26},{type:'H',start:28,end:43},
-    ]
-  },
-  {
-    name:'Cucumber', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Provide trellis for vining types. Keep picked for more fruit.',
+    bars:[{type:'S',start:2,end:3},{type:'T',start:7,end:9},{type:'H',start:13,end:17},{type:'S',start:19,end:21},{type:'T',start:24,end:26},{type:'H',start:28,end:43}] },
+  { name:'Cucumber', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Provide trellis for vining types. Keep picked or production stops.',
     harvestInfo:'Harvest before yellowing. Pickling types at 2–3"; slicing at 6–8". Jun–Sep.',
     links:[
-      {label:'UME Cucumbers', url:'https://extension.umd.edu/resource/cucumbers'},
+      {label:'UME Cucumbers', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Cucumber recipes', url:'https://www.allrecipes.com/search?q=cucumber'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:19,end:32},
-    ]
-  },
-  {
-    name:'Eggplant', asterisk:false, season:'warm',
-    seedInfo:'Start indoors 8–10 weeks before transplant. Needs warmth. Slow to establish.',
-    harvestInfo:'Harvest when skin is glossy. Continuous harvest Jul–Sep.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:19,end:32}] },
+  { name:'Eggplant', asterisk:false, season:'warm',
+    seedInfo:'Start indoors 8–10 weeks before transplant. Needs warmth — use black plastic mulch to warm soil.',
+    harvestInfo:'Harvest when skin is glossy and fruit yields to gentle pressure. Continuous harvest Jul–Sep.',
     links:[
-      {label:'UME Eggplant', url:'https://extension.umd.edu/resource/eggplant'},
+      {label:'UME Eggplant', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Eggplant recipes', url:'https://www.allrecipes.com/search?q=eggplant'},
     ],
-    bars:[
-      {type:'S',start:4,end:7},{type:'T',start:13,end:15},{type:'H',start:18,end:32},
-    ]
-  },
-  {
-    name:'Garlic', asterisk:false, season:'cool',
-    seedInfo:'Plant cloves in fall (Oct–Nov) OR early spring. Fall planting gives much larger bulbs.',
-    harvestInfo:'Harvest when lower 3–4 leaves have browned (Jun–Jul). Cure 2–3 weeks.',
+    bars:[{type:'S',start:4,end:7},{type:'T',start:13,end:15},{type:'H',start:18,end:32}] },
+  { name:'Garlic', asterisk:false, season:'cool',
+    seedInfo:'Plant individual cloves in fall (Oct–Nov) for large bulbs, or early spring for smaller ones. Fall is strongly preferred.',
+    harvestInfo:'Harvest when lower 3–4 leaves have browned (Jun–Jul). Cure 2–3 weeks in a dry, airy spot.',
     links:[
-      {label:'UME Garlic', url:'https://extension.umd.edu/resource/garlic'},
+      {label:'UME Garlic Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Garlic recipes', url:'https://www.allrecipes.com/search?q=garlic'},
     ],
-    bars:[
-      {type:'G',start:4,end:6},{type:'H',start:16,end:20},
-      {type:'G',start:36,end:40},{type:'H',start:16,end:20},
-    ]
-  },
-  {
-    name:'Ground Cherries', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Relative of tomatillo. Self-seeds prolifically.',
-    harvestInfo:'Collect from ground when husk papery. Sweet, tropical flavor. Jul–Sep.',
+    bars:[{type:'G',start:4,end:6},{type:'H',start:16,end:20},{type:'G',start:36,end:40}] },
+  { name:'Ground Cherries', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Relative of tomatillo with papery husk. Self-seeds prolifically — be warned!',
+    harvestInfo:'Collect from ground when husk turns papery brown. Sweet tropical flavor. Jul–Sep.',
     links:[
-      {label:'Ground cherries guide', url:'https://extension.umd.edu/resource/ground-cherries'},
+      {label:'Ground cherries info', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Ground cherry recipes', url:'https://www.allrecipes.com/search?q=ground+cherries'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:22,end:32},
-    ]
-  },
-  {
-    name:'Hibiscus (Roselle)', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Grown for calyces (used in teas/jams). Tropical plant.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:22,end:32}] },
+  { name:'Hibiscus (Roselle)', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Grown for calyces used in teas and jams. Beautiful tropical plant.',
     harvestInfo:'Harvest calyces after petals drop. Sep–Oct.',
     links:[
-      {label:'Roselle hibiscus', url:'https://extension.umd.edu/resource/roselle'},
+      {label:'UME Roselle Hibiscus', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Hibiscus tea recipe', url:'https://www.allrecipes.com/search?q=hibiscus+tea'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:28,end:35},
-    ]
-  },
-  {
-    name:'Jute Leaves', asterisk:true, season:'warm',
-    seedInfo:'Direct sow in warm soil. Used in Middle Eastern and African cooking. Fast-growing.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:28,end:35}] },
+  { name:'Jute Leaves', asterisk:true, season:'warm',
+    seedInfo:'Direct sow in warm soil. Used in Middle Eastern and African cooking (molokhia). Fast-growing.',
     harvestInfo:'Harvest young tender leaves continuously through summer.',
     links:[
-      {label:'Growing jute leaves', url:'https://extension.umd.edu/resource/jute'},
+      {label:'Jute leaves growing guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Molokhia recipes', url:'https://www.allrecipes.com/search?q=molokhia'},
     ],
-    bars:[
-      {type:'G',start:13,end:17},{type:'H',start:18,end:32},
-    ]
-  },
-  {
-    name:'Kale', asterisk:true, season:'cool',
-    seedInfo:'Direct sow spring or late summer. Hardy green — survives frost. Nutrient powerhouse.',
-    harvestInfo:'Harvest outer leaves. Sweetens after frost. Two seasons: spring and fall.',
+    bars:[{type:'G',start:13,end:17},{type:'H',start:18,end:32}] },
+  { name:'Kale', asterisk:true, season:'cool',
+    seedInfo:'Direct sow spring or late summer. Incredibly hardy — survives frost and improves in flavor. Nutrient powerhouse.',
+    harvestInfo:'Harvest outer leaves. Sweetens significantly after frost. Two seasons.',
     links:[
-      {label:'UME Kale', url:'https://extension.umd.edu/resource/kale'},
+      {label:'UME Kale Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Kale recipes', url:'https://www.allrecipes.com/search?q=kale'},
     ],
-    bars:[
-      {type:'G',start:5,end:9},{type:'H',start:13,end:19},
-      {type:'G',start:24,end:27},{type:'H',start:28,end:43},
-    ]
-  },
-  {
-    name:'Kohlrabi', asterisk:true, season:'cool',
-    seedInfo:'Direct sow spring and fall. Fast crop (45–55 days). Unusual but delicious.',
-    harvestInfo:'Harvest bulb at 2–3" diameter. Two seasons.',
+    bars:[{type:'G',start:5,end:9},{type:'H',start:13,end:19},{type:'G',start:24,end:27},{type:'H',start:28,end:43}] },
+  { name:'Kohlrabi', asterisk:true, season:'cool',
+    seedInfo:'Direct sow spring and fall. Fast crop (45–55 days). Tastes like a mild broccoli stem — great raw.',
+    harvestInfo:'Harvest bulb at 2–3" diameter before it gets woody. Two seasons.',
     links:[
-      {label:'UME Kohlrabi', url:'https://extension.umd.edu/resource/kohlrabi'},
+      {label:'UME Kohlrabi', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Kohlrabi recipes', url:'https://www.allrecipes.com/search?q=kohlrabi'},
     ],
-    bars:[
-      {type:'G',start:6,end:9},{type:'H',start:12,end:16},
-      {type:'G',start:25,end:27},{type:'H',start:30,end:37},
-    ]
-  },
-  {
-    name:'Leek', asterisk:true, season:'cool',
-    seedInfo:'Start indoors early. Blanch by hilling soil. Long season; very cold hardy.',
-    harvestInfo:'Harvest when 1" diameter. Can leave in ground through winter.',
+    bars:[{type:'G',start:6,end:9},{type:'H',start:12,end:16},{type:'G',start:25,end:27},{type:'H',start:30,end:37}] },
+  { name:'Leek', asterisk:true, season:'cool',
+    seedInfo:'Start indoors in late winter or early spring. Blanch by hilling soil around stems. Very cold hardy.',
+    harvestInfo:'Harvest when 1" diameter. Can leave in ground through winter for even longer harvests.',
     links:[
-      {label:'UME Leeks', url:'https://extension.umd.edu/resource/leeks'},
+      {label:'UME Leeks', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Leek recipes', url:'https://www.allrecipes.com/search?q=leeks'},
     ],
-    bars:[
-      {type:'G',start:4,end:7},{type:'H',start:22,end:43},
-    ]
-  },
-  {
-    name:'Lettuce, Head', asterisk:false, season:'cool',
-    seedInfo:'Start indoors for spring; direct sow or transplant for fall. Needs cool temps.',
-    harvestInfo:'Harvest whole head when full. Two seasons.',
+    bars:[{type:'G',start:4,end:7},{type:'H',start:22,end:43}] },
+  { name:'Lettuce, Head', asterisk:false, season:'cool',
+    seedInfo:'Start indoors for spring; transplant or direct sow for fall. Needs cool temps — bolts in summer.',
+    harvestInfo:'Harvest whole head when full and firm. Two seasons: spring and fall.',
     links:[
-      {label:'UME Lettuce', url:'https://extension.umd.edu/resource/lettuce'},
+      {label:'UME Lettuce Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Salad recipes', url:'https://www.allrecipes.com/search?q=lettuce+salad'},
     ],
-    bars:[
-      {type:'S',start:2,end:3},{type:'T',start:7,end:8},{type:'H',start:11,end:16},
-      {type:'S',start:20,end:21},{type:'T',start:24,end:25},{type:'H',start:29,end:37},
-    ]
-  },
-  {
-    name:'Lettuce, Leaf', asterisk:true, season:'cool',
-    seedInfo:'Direct sow spring and fall. Succession plant every 2 weeks. Easy and fast.',
-    harvestInfo:'Cut outer leaves. Continuous harvest. Two seasons.',
+    bars:[{type:'S',start:2,end:3},{type:'T',start:7,end:8},{type:'H',start:11,end:16},{type:'S',start:20,end:21},{type:'T',start:24,end:25},{type:'H',start:29,end:37}] },
+  { name:'Lettuce, Leaf', asterisk:true, season:'cool',
+    seedInfo:'Direct sow spring and fall. Succession plant every 2 weeks for nonstop harvest. Easiest salad green.',
+    harvestInfo:'Cut outer leaves at any size. Continuous harvest. Two seasons.',
     links:[
-      {label:'UME Lettuce', url:'https://extension.umd.edu/resource/lettuce'},
+      {label:'UME Lettuce Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Salad ideas', url:'https://www.allrecipes.com/search?q=leaf+lettuce'},
     ],
-    bars:[
-      {type:'G',start:5,end:10},{type:'H',start:10,end:17},
-      {type:'G',start:25,end:28},{type:'H',start:29,end:39},
-    ]
-  },
-  {
-    name:'Lettuce, Romaine', asterisk:true, season:'cool',
-    seedInfo:'Similar to head lettuce. Tolerates some heat better than butterhead types.',
+    bars:[{type:'G',start:5,end:10},{type:'H',start:10,end:17},{type:'G',start:25,end:28},{type:'H',start:29,end:39}] },
+  { name:'Lettuce, Romaine', asterisk:true, season:'cool',
+    seedInfo:'Similar to head lettuce. Slightly more heat tolerant. Great for Caesar salads.',
     harvestInfo:'Harvest whole or cut outer leaves. Spring and fall.',
     links:[
-      {label:'UME Lettuce', url:'https://extension.umd.edu/resource/lettuce'},
+      {label:'UME Lettuce Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Caesar salad recipes', url:'https://www.allrecipes.com/search?q=romaine+lettuce'},
     ],
-    bars:[
-      {type:'G',start:5,end:10},{type:'H',start:10,end:17},
-      {type:'G',start:25,end:28},{type:'H',start:29,end:39},
-    ]
-  },
-  {
-    name:'Mustard Greens', asterisk:true, season:'cool',
-    seedInfo:'Direct sow spring and fall. Bolts in heat. Spicy, fast-growing green.',
+    bars:[{type:'G',start:5,end:10},{type:'H',start:10,end:17},{type:'G',start:25,end:28},{type:'H',start:29,end:39}] },
+  { name:'Mustard Greens', asterisk:true, season:'cool',
+    seedInfo:'Direct sow spring and fall. Bolts in heat but extremely fast. Spicy, peppery green.',
     harvestInfo:'Harvest young leaves for mild flavor. Two seasons.',
     links:[
-      {label:'UME Mustard', url:'https://extension.umd.edu/resource/mustard-greens'},
+      {label:'UME Mustard Greens', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Mustard green recipes', url:'https://www.allrecipes.com/search?q=mustard+greens'},
     ],
-    bars:[
-      {type:'G',start:5,end:9},{type:'H',start:10,end:16},
-      {type:'G',start:25,end:28},{type:'H',start:29,end:39},
-    ]
-  },
-  {
-    name:'Okra', asterisk:true, season:'warm',
-    seedInfo:'Direct sow in warm soil. Soak seeds 24hr. Heat-loving. Sow in hills.',
-    harvestInfo:'Harvest pods at 3–4" every 2 days or they become woody. Jul–Sep.',
+    bars:[{type:'G',start:5,end:9},{type:'H',start:10,end:16},{type:'G',start:25,end:28},{type:'H',start:29,end:39}] },
+  { name:'Okra', asterisk:true, season:'warm',
+    seedInfo:'Direct sow in warm soil. Soak seeds 24hr. Heat-loving — the hotter the better. Sow in hills.',
+    harvestInfo:'Harvest pods at 3–4" every 2 days or they become tough and woody. Jul–Sep.',
     links:[
-      {label:'UME Okra', url:'https://extension.umd.edu/resource/okra'},
+      {label:'UME Okra Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Okra recipes', url:'https://www.allrecipes.com/search?q=okra'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:20,end:32},
-    ]
-  },
-  {
-    name:'Onions', asterisk:false, season:'cool',
-    seedInfo:'Start from seed indoors in Jan–Feb or plant sets in spring.',
-    harvestInfo:'Harvest when tops fall over. Cure 2–3 weeks. Jul–Aug.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:20,end:32}] },
+  { name:'Onions', asterisk:false, season:'cool',
+    seedInfo:'Start from seed indoors in Jan–Feb or use sets/transplants in spring. Long day varieties for Maryland.',
+    harvestInfo:'Harvest when tops fall over naturally. Cure 2–3 weeks in warm dry spot. Jul–Aug.',
     links:[
-      {label:'UME Onions', url:'https://extension.umd.edu/resource/onions'},
+      {label:'UME Onions Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Onion recipes', url:'https://www.allrecipes.com/search?q=onions'},
     ],
-    bars:[
-      {type:'S',start:0,end:3},{type:'T',start:8,end:10},{type:'H',start:18,end:25},
-    ]
-  },
-  {
-    name:'Parsnips', asterisk:false, season:'cool',
-    seedInfo:'Direct sow early spring. Slow to germinate. Mark rows. Long season (100–120 days).',
-    harvestInfo:'Flavor improves after frost. Harvest late fall through winter.',
+    bars:[{type:'S',start:0,end:3},{type:'T',start:8,end:10},{type:'H',start:18,end:25}] },
+  { name:'Parsnips', asterisk:false, season:'cool',
+    seedInfo:'Direct sow early spring. Very slow to germinate — mark rows and be patient. Long season (100–120 days).',
+    harvestInfo:'Flavor improves dramatically after frost. Harvest late fall through winter. Very sweet!',
     links:[
-      {label:'UME Parsnips', url:'https://extension.umd.edu/resource/parsnips'},
+      {label:'UME Parsnips', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Parsnip recipes', url:'https://www.allrecipes.com/search?q=parsnips'},
     ],
-    bars:[
-      {type:'G',start:7,end:10},{type:'H',start:32,end:43},
-    ]
-  },
-  {
-    name:'Peas', asterisk:false, season:'cool',
-    seedInfo:'Direct sow as soon as ground can be worked (Feb–Mar). Peas hate heat.',
-    harvestInfo:'Harvest before pods fully fill out. May–Jun. Plant again Sep for fall crop.',
+    bars:[{type:'G',start:7,end:10},{type:'H',start:32,end:43}] },
+  { name:'Peas', asterisk:false, season:'cool',
+    seedInfo:'Direct sow as soon as ground can be worked (Feb–Mar). Peas hate heat and will stop producing.',
+    harvestInfo:'Harvest before pods fully fill for snap peas. May–Jun. Can replant in late Aug for fall crop.',
     links:[
-      {label:'UME Peas', url:'https://extension.umd.edu/resource/peas'},
+      {label:'UME Peas Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Pea recipes', url:'https://www.allrecipes.com/search?q=peas'},
     ],
-    bars:[
-      {type:'G',start:4,end:7},{type:'H',start:12,end:17},
-    ]
-  },
-  {
-    name:'Peas, Southern', asterisk:false, season:'warm',
-    seedInfo:'Direct sow after last frost. Heat-tolerant. Black-eyed peas, cowpeas, etc.',
-    harvestInfo:'Harvest green (fresh) or dry on plant. Jun–Sep.',
+    bars:[{type:'G',start:4,end:7},{type:'H',start:12,end:17}] },
+  { name:'Peas, Southern', asterisk:false, season:'warm',
+    seedInfo:'Direct sow after last frost. Heat-tolerant. Includes black-eyed peas, crowder peas, cowpeas.',
+    harvestInfo:'Harvest green for fresh eating or let dry on plant for storage. Jun–Sep.',
     links:[
-      {label:'Southern peas', url:'https://extension.umd.edu/resource/southern-peas'},
+      {label:'UME Southern Peas', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Black-eyed pea recipes', url:'https://www.allrecipes.com/search?q=black+eyed+peas'},
     ],
-    bars:[
-      {type:'G',start:13,end:17},{type:'H',start:20,end:32},
-    ]
-  },
-  {
-    name:'Peppers', asterisk:false, season:'warm',
-    seedInfo:'Start indoors 10–12 weeks before transplant. Needs warmth to germinate. Slow start.',
-    harvestInfo:'Harvest green or let ripen to red/yellow. Continuous harvest Jun–Oct.',
+    bars:[{type:'G',start:13,end:17},{type:'H',start:20,end:32}] },
+  { name:'Peppers', asterisk:false, season:'warm',
+    seedInfo:'Start indoors 10–12 weeks before transplant. Needs warmth to germinate (80°F+). Slow to start but prolific.',
+    harvestInfo:'Harvest green or let ripen to red/yellow/orange — fully ripe has more vitamins. Continuous Jun–Oct.',
     links:[
-      {label:'UME Peppers', url:'https://extension.umd.edu/resource/peppers'},
+      {label:'UME Peppers Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Pepper recipes', url:'https://www.allrecipes.com/search?q=bell+peppers'},
     ],
-    bars:[
-      {type:'S',start:4,end:7},{type:'T',start:13,end:15},{type:'H',start:18,end:33},
-    ]
-  },
-  {
-    name:'Potatoes', asterisk:false, season:'cool',
-    seedInfo:'Plant certified seed potatoes in early spring. Cut large pieces with 2+ eyes.',
-    harvestInfo:'New potatoes in 10 wks; full harvest when tops die back. Jul–Aug.',
+    bars:[{type:'S',start:4,end:7},{type:'T',start:13,end:15},{type:'H',start:18,end:33}] },
+  { name:'Potatoes', asterisk:false, season:'cool',
+    seedInfo:'Plant certified seed potatoes in early spring. Cut large pieces with 2+ eyes. Hill up soil as plants grow.',
+    harvestInfo:'New potatoes in 10 weeks; full harvest when tops die back. Jul–Aug.',
     links:[
-      {label:'UME Potatoes', url:'https://extension.umd.edu/resource/potatoes'},
+      {label:'UME Potatoes Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Potato recipes', url:'https://www.allrecipes.com/search?q=potatoes'},
     ],
-    bars:[
-      {type:'G',start:6,end:9},{type:'H',start:18,end:25},
-    ]
-  },
-  {
-    name:'Pumpkins', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Count back 90–110 days from desired harvest. Needs space!',
-    harvestInfo:'Harvest when fully colored and stem corky. Sep–Oct.',
+    bars:[{type:'G',start:6,end:9},{type:'H',start:18,end:25}] },
+  { name:'Pumpkins', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Count back 90–110 days from desired harvest date. Needs lots of space!',
+    harvestInfo:'Harvest when fully colored with corky stem. Sep–Oct.',
     links:[
-      {label:'UME Pumpkins', url:'https://extension.umd.edu/resource/pumpkins'},
+      {label:'UME Pumpkins Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Pumpkin recipes', url:'https://www.allrecipes.com/search?q=pumpkin'},
     ],
-    bars:[
-      {type:'G',start:15,end:18},{type:'H',start:28,end:35},
-    ]
-  },
-  {
-    name:'Radishes', asterisk:false, season:'cool',
-    seedInfo:'Direct sow every 2 weeks spring and fall. Fastest crop in the garden (25–30 days).',
-    harvestInfo:'Harvest when 1" round. Do not let over-mature — become pithy.',
+    bars:[{type:'G',start:15,end:18},{type:'H',start:28,end:35}] },
+  { name:'Radishes', asterisk:false, season:'cool',
+    seedInfo:'Direct sow every 2 weeks spring and fall. Fastest crop (25–30 days). Great for marking slow-germinating rows.',
+    harvestInfo:'Harvest when 1" round. Do not let over-mature — become hollow and pithy.',
     links:[
-      {label:'UME Radishes', url:'https://extension.umd.edu/resource/radishes'},
+      {label:'UME Radishes', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Radish recipes', url:'https://www.allrecipes.com/search?q=radishes'},
     ],
-    bars:[
-      {type:'G',start:5,end:10},{type:'H',start:7,end:14},
-      {type:'G',start:25,end:28},{type:'H',start:27,end:37},
-    ]
-  },
-  {
-    name:'Shallots', asterisk:true, season:'cool',
-    seedInfo:'Plant sets in early spring or fall. Similar to onions but more delicate flavor.',
+    bars:[{type:'G',start:5,end:10},{type:'H',start:7,end:14},{type:'G',start:25,end:28},{type:'H',start:27,end:37}] },
+  { name:'Shallots', asterisk:true, season:'cool',
+    seedInfo:'Plant sets in early spring or fall. Similar to onions but with a more delicate, nuanced flavor.',
     harvestInfo:'Harvest when tops begin to die back. Jun–Jul.',
     links:[
-      {label:'UME Shallots', url:'https://extension.umd.edu/resource/shallots'},
+      {label:'UME Shallots', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Shallot recipes', url:'https://www.allrecipes.com/search?q=shallots'},
     ],
-    bars:[
-      {type:'G',start:5,end:9},{type:'H',start:16,end:22},
-      {type:'G',start:36,end:40},{type:'H',start:16,end:22},
-    ]
-  },
-  {
-    name:'Soybeans (Edamame)', asterisk:false, season:'warm',
-    seedInfo:'Direct sow after last frost. Edamame varieties harvested fresh when pods plump.',
-    harvestInfo:'Harvest green before beans harden. Aug–Sep.',
+    bars:[{type:'G',start:5,end:9},{type:'H',start:16,end:22},{type:'G',start:36,end:40}] },
+  { name:'Soybeans (Edamame)', asterisk:false, season:'warm',
+    seedInfo:'Direct sow after last frost. Use edamame varieties for fresh eating. Regular soybeans for drying.',
+    harvestInfo:'Harvest green when pods are plump but beans still soft. Aug–Sep.',
     links:[
-      {label:'UME Edamame', url:'https://extension.umd.edu/resource/soybeans'},
+      {label:'UME Soybeans', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Edamame recipes', url:'https://www.allrecipes.com/search?q=edamame'},
     ],
-    bars:[
-      {type:'G',start:13,end:17},{type:'H',start:22,end:30},
-    ]
-  },
-  {
-    name:'Spinach', asterisk:false, season:'cool',
-    seedInfo:'Direct sow very early spring and late summer. Slow to germinate in warm soil.',
-    harvestInfo:'Harvest outer leaves or cut whole plant. Two seasons.',
+    bars:[{type:'G',start:13,end:17},{type:'H',start:22,end:30}] },
+  { name:'Spinach', asterisk:false, season:'cool',
+    seedInfo:'Direct sow very early spring and late summer. Slow in warm soil. Prefers temps under 75°F.',
+    harvestInfo:'Harvest outer leaves or cut whole plant. Two full seasons.',
     links:[
-      {label:'UME Spinach', url:'https://extension.umd.edu/resource/spinach'},
+      {label:'UME Spinach Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Spinach recipes', url:'https://www.allrecipes.com/search?q=spinach'},
     ],
-    bars:[
-      {type:'G',start:4,end:8},{type:'H',start:9,end:14},
-      {type:'G',start:25,end:28},{type:'H',start:29,end:37},
-    ]
-  },
-  {
-    name:'Squash, Summer', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Prolific producer. Pick small for best flavor.',
+    bars:[{type:'G',start:4,end:8},{type:'H',start:9,end:14},{type:'G',start:25,end:28},{type:'H',start:29,end:37}] },
+  { name:'Squash, Summer', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Most prolific plant in the garden. Pick small for best flavor and texture.',
     harvestInfo:'Harvest at 6–8" every 2–3 days. Jun–Sep.',
     links:[
-      {label:'UME Summer Squash', url:'https://extension.umd.edu/resource/summer-squash'},
+      {label:'UME Summer Squash', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Zucchini recipes', url:'https://www.allrecipes.com/search?q=zucchini'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:18,end:32},
-    ]
-  },
-  {
-    name:'Squash, Winter', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Long season (80–110 days). Stores well.',
-    harvestInfo:'Harvest when skin resists thumbnail scratch. Sep–Oct.',
+    bars:[{type:'G',start:13,end:16},{type:'H',start:18,end:32}] },
+  { name:'Squash, Winter', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Long season (80–110 days). Stores for months in cool conditions.',
+    harvestInfo:'Harvest when skin resists thumbnail scratch and stem is corky. Sep–Oct.',
     links:[
-      {label:'UME Winter Squash', url:'https://extension.umd.edu/resource/winter-squash'},
+      {label:'UME Winter Squash', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Winter squash recipes', url:'https://www.allrecipes.com/search?q=winter+squash'},
     ],
-    bars:[
-      {type:'G',start:15,end:18},{type:'H',start:28,end:35},
-    ]
-  },
-  {
-    name:'Sweet Corn', asterisk:false, season:'warm',
-    seedInfo:'Direct sow in blocks (not rows) for pollination. Plant 3–4 successive weeks.',
+    bars:[{type:'G',start:15,end:18},{type:'H',start:28,end:35}] },
+  { name:'Sweet Corn', asterisk:false, season:'warm',
+    seedInfo:'Direct sow in blocks of at least 4 rows (not single rows) for good pollination. Succession plant.',
     harvestInfo:'Harvest when silk browns and kernel squirts milky juice. Jul–Sep.',
     links:[
-      {label:'UME Sweet Corn', url:'https://extension.umd.edu/resource/sweet-corn'},
+      {label:'UME Sweet Corn Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Corn on the cob recipes', url:'https://www.allrecipes.com/search?q=corn+on+the+cob'},
     ],
-    bars:[
-      {type:'G',start:12,end:19},{type:'H',start:20,end:32},
-    ]
-  },
-  {
-    name:'Sweet Potatoes', asterisk:false, season:'warm',
-    seedInfo:'Start slips indoors (Apr). Transplant after last frost. Long season — 90–100 days.',
-    harvestInfo:'Harvest before hard frost. Cure at 85°F for 10 days. Young leaves edible all summer.',
+    bars:[{type:'G',start:12,end:19},{type:'H',start:20,end:32}] },
+  { name:'Sweet Potatoes', asterisk:false, season:'warm',
+    seedInfo:'Start slips indoors in April. Transplant after last frost. Long season (90–100 days). Loves heat.',
+    harvestInfo:'Harvest before hard frost. Cure at 85°F for 10 days — essential for sweet flavor. Young leaves edible all summer.',
     links:[
-      {label:'UME Sweet Potatoes', url:'https://extension.umd.edu/resource/sweet-potatoes'},
+      {label:'UME Sweet Potatoes', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Sweet potato recipes', url:'https://www.allrecipes.com/search?q=sweet+potatoes'},
     ],
-    bars:[
-      {type:'S',start:8,end:11},{type:'T',start:13,end:15},{type:'H',start:16,end:32},
-    ]
-  },
-  {
-    name:'Tomatillos', asterisk:false, season:'warm',
-    seedInfo:'Start indoors 6–8 weeks before transplant. Need 2+ plants for pollination.',
-    harvestInfo:'Harvest when husk fills out and begins to split. Jul–Sep.',
+    bars:[{type:'S',start:8,end:11},{type:'T',start:13,end:15},{type:'H',start:16,end:32}] },
+  { name:'Tomatillos', asterisk:false, season:'warm',
+    seedInfo:'Start indoors 6–8 weeks before transplant. Requires 2+ plants for cross-pollination. Essential for salsa verde.',
+    harvestInfo:'Harvest when husk fills out completely and begins to split. Jul–Sep.',
     links:[
-      {label:'UME Tomatillos', url:'https://extension.umd.edu/resource/tomatillos'},
+      {label:'UME Tomatillos', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Salsa verde recipes', url:'https://www.allrecipes.com/search?q=tomatillo'},
     ],
-    bars:[
-      {type:'S',start:7,end:10},{type:'T',start:13,end:15},{type:'H',start:19,end:32},
-    ]
-  },
-  {
-    name:'Tomatoes', asterisk:false, season:'warm',
-    seedInfo:'Start indoors 6–8 weeks before transplant. The king of the garden. Stake or cage.',
-    harvestInfo:'Harvest when fully colored and slightly soft. Continuous Jul–Oct.',
+    bars:[{type:'S',start:7,end:10},{type:'T',start:13,end:15},{type:'H',start:19,end:32}] },
+  { name:'Tomatoes', asterisk:false, season:'warm',
+    seedInfo:'Start indoors 6–8 weeks before transplant. The king of the garden. Bury stem deep when transplanting.',
+    harvestInfo:'Harvest when fully colored and slightly soft. Never refrigerate! Continuous Jul–Oct.',
     links:[
-      {label:'UME Tomatoes', url:'https://extension.umd.edu/resource/tomatoes'},
-      {label:'Tomato profile', url:'https://extension.umd.edu/resource/vegetable-profile-tomatoes'},
+      {label:'UME Tomatoes Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Fresh tomato recipes', url:'https://www.allrecipes.com/search?q=fresh+tomatoes'},
     ],
-    bars:[
-      {type:'S',start:6,end:9},{type:'T',start:13,end:15},{type:'H',start:19,end:35},
-    ]
-  },
-  {
-    name:'Turnips', asterisk:false, season:'cool',
-    seedInfo:'Direct sow spring and fall. Fast crop. Both roots and greens edible.',
-    harvestInfo:'Harvest roots at 2–3". Greens anytime. Two seasons.',
+    bars:[{type:'S',start:6,end:9},{type:'T',start:13,end:15},{type:'H',start:19,end:35}] },
+  { name:'Turnips', asterisk:false, season:'cool',
+    seedInfo:'Direct sow spring and fall. Fast crop. Both roots and greens edible. Excellent fall crop.',
+    harvestInfo:'Harvest roots at 2–3". Greens can be cut anytime. Two seasons.',
     links:[
-      {label:'UME Turnips', url:'https://extension.umd.edu/resource/turnips'},
+      {label:'UME Turnips', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Turnip recipes', url:'https://www.allrecipes.com/search?q=turnips'},
     ],
-    bars:[
-      {type:'G',start:6,end:10},{type:'H',start:12,end:17},
-      {type:'G',start:25,end:28},{type:'H',start:29,end:37},
-    ]
-  },
-  {
-    name:'Waterleaf', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. African green used in soups and stews. Shade tolerant.',
+    bars:[{type:'G',start:6,end:10},{type:'H',start:12,end:17},{type:'G',start:25,end:28},{type:'H',start:29,end:37}] },
+  { name:'Waterleaf', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. African green used in soups and stews. Shade tolerant — grows under taller crops.',
     harvestInfo:'Harvest tender young leaves throughout summer.',
     links:[
-      {label:'Waterleaf guide', url:'https://extension.umd.edu/resource/waterleaf'},
+      {label:'UME Ethnic Vegetables', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Waterleaf recipes', url:'https://www.allrecipes.com/search?q=waterleaf'},
     ],
-    bars:[
-      {type:'G',start:13,end:17},{type:'H',start:18,end:32},
-    ]
-  },
-  {
-    name:'Watermelon', asterisk:true, season:'warm',
-    seedInfo:'Direct sow after last frost. Needs lots of space and heat. Long season.',
-    harvestInfo:'Ready when underside yellows and thumping sounds hollow. Jul–Sep.',
+    bars:[{type:'G',start:13,end:17},{type:'H',start:18,end:32}] },
+  { name:'Watermelon', asterisk:true, season:'warm',
+    seedInfo:'Direct sow after last frost. Needs lots of space and heat. Long season — plant early.',
+    harvestInfo:'Ready when underside turns yellow and thumping sounds hollow. Jul–Sep.',
     links:[
-      {label:'UME Watermelon', url:'https://extension.umd.edu/resource/watermelons'},
+      {label:'UME Watermelon Guide', url:'https://extension.umd.edu/food/grow-it-eat-it/vegetables/'},
+      {label:'Watermelon recipes', url:'https://www.allrecipes.com/search?q=watermelon'},
     ],
-    bars:[
-      {type:'G',start:13,end:16},{type:'H',start:23,end:32},
-    ]
-  },
+    bars:[{type:'G',start:13,end:16},{type:'H',start:23,end:32}] },
 ];
 
-// ─── DATE LOGIC ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// DATE HELPERS
+// ═══════════════════════════════════════════════════════════
 function getTodayColumn() {
   const now = new Date();
-  const month = now.getMonth(); // 0=Jan
-  const day = now.getDate();
-  const week = Math.floor((day - 1) / 7); // 0-indexed week in month
-  // Our calendar starts at Feb (month=1)
-  const calMonth = month - 1; // 0=Feb, 1=Mar, ...
-  if (calMonth < 0 || calMonth > 10) return null;
-  return calMonth * 4 + week;
+  const m = now.getMonth() - 1; // 0=Feb
+  if (m < 0 || m > 10) return null;
+  const w = Math.floor((now.getDate() - 1) / 7);
+  return m * 4 + Math.min(w, 3);
 }
-
 function getWeekLabel(col) {
-  const mi = Math.floor(col / 4);
-  const wi = col % 4;
-  return `${MONTHS[mi]} week ${wi + 1}`;
+  return `${MONTHS[Math.floor(col/4)]} wk ${(col%4)+1}`;
 }
-
 function formatToday() {
   const d = new Date();
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const mons = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${days[d.getDay()]}, ${mons[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+function getDaysUntilFrost() {
+  const now = new Date(); const y = now.getFullYear();
+  const lastFrost = new Date(y, 4, 1);   // May 1
+  const firstFrost = new Date(y, 9, 31); // Oct 31
+  const diffLast = Math.round((lastFrost - now) / 86400000);
+  const diffFirst = Math.round((firstFrost - now) / 86400000);
+  return { diffLast, diffFirst };
 }
 
-// ─── BUILD CALENDAR ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// FROST BANNER
+// ═══════════════════════════════════════════════════════════
+function buildFrostBanner() {
+  const { diffLast, diffFirst } = getDaysUntilFrost();
+  const banner = document.getElementById('frost-banner');
+  if (diffLast > 0 && diffLast <= 21) {
+    banner.className = 'show last-frost';
+    banner.innerHTML = `🌱 <strong>Last frost in ${diffLast} days (May 1)</strong> — warm-season transplants almost ready to go out. Harden off seedlings now.`;
+  } else if (diffFirst > 0 && diffFirst <= 21) {
+    banner.className = 'show first-frost';
+    banner.innerHTML = `❄️ <strong>First frost in ${diffFirst} days (Oct 31)</strong> — harvest tender crops, cover frost-sensitive plants, bring in green tomatoes.`;
+  } else if (diffLast <= 0 && diffFirst > 0) {
+    // After last frost, before first frost — growing season
+    banner.className = '';
+  } else {
+    banner.className = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// WEEKLY DIGEST
+// ═══════════════════════════════════════════════════════════
+function buildDigest() {
+  const col = getTodayColumn();
+  const plantNow = col !== null ? CROPS.filter(c => c.bars.some(b => ['G','S','T'].includes(b.type) && col >= b.start && col <= b.end)) : [];
+  const harvestNow = col !== null ? CROPS.filter(c => c.bars.some(b => b.type === 'H' && col >= b.start && col <= b.end)) : [];
+  const gardenEntries = loadGardenLog();
+
+  document.getElementById('dig-plant-count').textContent = plantNow.length;
+  document.getElementById('dig-plant-list').textContent = plantNow.slice(0,4).map(c=>c.name).join(', ') + (plantNow.length > 4 ? ` +${plantNow.length-4} more` : '');
+  document.getElementById('dig-harvest-count').textContent = harvestNow.length;
+  document.getElementById('dig-harvest-list').textContent = harvestNow.slice(0,4).map(c=>c.name).join(', ') + (harvestNow.length > 4 ? ` +${harvestNow.length-4} more` : '');
+  document.getElementById('dig-garden-count').textContent = gardenEntries.length;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUILD CALENDAR
+// ═══════════════════════════════════════════════════════════
+let currentZoom = 18;
+function setZoom(val) {
+  currentZoom = parseInt(val);
+  document.documentElement.style.setProperty('--week-w', val + 'px');
+}
+
 function buildCalendar() {
   const scroll = document.getElementById('calendar-scroll');
   scroll.innerHTML = '';
-
   const todayCol = getTodayColumn();
+  const notes = loadAllNotes();
 
-  // Month header
-  const mhDiv = document.createElement('div');
-  mhDiv.className = 'month-header';
-  mhDiv.innerHTML = `<div class="crop-col">Crop</div>`;
+  // Month header row
+  const mh = document.createElement('div');
+  mh.className = 'month-header';
+  const mhNameCell = document.createElement('div');
+  mhNameCell.className = 'crop-col-cell';
+  mhNameCell.style.cssText = 'padding:8px 14px;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:var(--sage);display:flex;align-items:center;';
+  mhNameCell.textContent = 'Crop';
+  mh.appendChild(mhNameCell);
+  const mhMonths = document.createElement('div');
+  mhMonths.className = 'months-row';
   MONTHS.forEach(m => {
-    mhDiv.innerHTML += `<div class="month-cell month-start">${m}</div>`;
+    const cell = document.createElement('div');
+    cell.className = 'month-cell';
+    cell.textContent = m;
+    mhMonths.appendChild(cell);
   });
-  scroll.appendChild(mhDiv);
+  mh.appendChild(mhMonths);
+  scroll.appendChild(mh);
 
-  // Week numbers
-  const wnDiv = document.createElement('div');
-  wnDiv.className = 'week-numbers';
-  wnDiv.innerHTML = `<div class="crop-col-spacer"></div>`;
+  // Week number row
+  const wn = document.createElement('div');
+  wn.className = 'week-numbers';
+  const wnName = document.createElement('div');
+  wnName.className = 'crop-col-cell';
+  wn.appendChild(wnName);
+  const wnNums = document.createElement('div');
+  wnNums.className = 'week-nums-row';
   for (let i = 0; i < 44; i++) {
-    wnDiv.innerHTML += `<div class="week-num-cell">${(i % 4) + 1}</div>`;
+    const cell = document.createElement('div');
+    cell.className = 'week-num-cell';
+    cell.textContent = (i % 4) + 1;
+    wnNums.appendChild(cell);
   }
-  scroll.appendChild(wnDiv);
+  wn.appendChild(wnNums);
+  scroll.appendChild(wn);
 
-  // Rows container (relative for today line)
-  const rowsContainer = document.createElement('div');
-  rowsContainer.style.position = 'relative';
+  // Rows container
+  const rowsWrap = document.createElement('div');
+  rowsWrap.style.position = 'relative';
 
   // Today column highlight
   if (todayCol !== null) {
-    const todayHighlight = document.createElement('div');
-    todayHighlight.className = 'today-col-highlight';
-    todayHighlight.style.left = `${220 + todayCol * 18}px`;
-    todayHighlight.style.width = `${18}px`;
-    rowsContainer.appendChild(todayHighlight);
+    const hi = document.createElement('div');
+    hi.className = 'today-col-highlight';
+    hi.style.left = `calc(var(--name-w) + ${todayCol} * var(--week-w))`;
+    rowsWrap.appendChild(hi);
   }
 
   // Month dividers
-  MONTH_STARTS.forEach((col, i) => {
-    if (i === 0) return;
+  for (let mi = 1; mi < MONTHS.length; mi++) {
     const div = document.createElement('div');
     div.className = 'month-divider';
-    div.style.left = `${220 + col * 18}px`;
-    rowsContainer.appendChild(div);
-  });
+    div.style.left = `calc(var(--name-w) + ${mi * 4} * var(--week-w))`;
+    rowsWrap.appendChild(div);
+  }
 
   // Crop groups
   CROPS.forEach(crop => {
     const group = document.createElement('div');
     group.className = 'crop-group';
+    group.id = `crop-${crop.name.replace(/[^a-z0-9]/gi,'-')}`;
     group.dataset.crop = crop.name.toLowerCase();
     group.dataset.season = crop.season;
-    group.id = `crop-${crop.name.replace(/[^a-z0-9]/gi, '-')}`;
+
+    const hasNote = !!notes[crop.name];
 
     // Plant row
-    const plantRow = buildRow(crop, 'plant', todayCol);
+    const plantRow = document.createElement('div');
+    plantRow.className = 'crop-row plant-row';
+
+    const plantNameCell = document.createElement('div');
+    plantNameCell.className = 'crop-col-cell';
+    const plantName = document.createElement('div');
+    plantName.className = 'crop-name';
+    plantName.innerHTML = `
+      <span style="overflow:hidden;text-overflow:ellipsis">${crop.name}${crop.asterisk ? '<span class="asterisk"> ★</span>' : ''}</span>
+      ${hasNote ? '<span class="has-note-dot" title="Has notes"></span>' : ''}
+    `;
+    plantName.onclick = () => openDetailPanel(crop);
+    plantNameCell.appendChild(plantName);
+    plantRow.appendChild(plantNameCell);
+
+    const plantBarsArea = buildBarsArea(crop.bars.filter(b => ['G','S','T'].includes(b.type)), crop, todayCol);
+    plantRow.appendChild(plantBarsArea);
     group.appendChild(plantRow);
 
     // Harvest row
-    const harvestRow = buildRow(crop, 'harvest', todayCol);
+    const harvestRow = document.createElement('div');
+    harvestRow.className = 'crop-row harvest-row';
+    harvestRow.style.background = 'rgba(0,0,0,0.07)';
+
+    const harvestNameCell = document.createElement('div');
+    harvestNameCell.className = 'crop-col-cell';
+    harvestNameCell.style.background = 'rgba(15,8,3,0.6)';
+    const harvestName = document.createElement('div');
+    harvestName.className = 'harvest-name';
+    harvestName.innerHTML = `<span class="row-type-label">harvest</span>`;
+    harvestNameCell.appendChild(harvestName);
+    harvestRow.appendChild(harvestNameCell);
+
+    const harvestBarsArea = buildBarsArea(crop.bars.filter(b => b.type === 'H'), crop, todayCol);
+    harvestRow.appendChild(harvestBarsArea);
     group.appendChild(harvestRow);
 
-    rowsContainer.appendChild(group);
+    rowsWrap.appendChild(group);
   });
 
-  // Today line
+  // Today line (on top of everything)
   if (todayCol !== null) {
     const tl = document.createElement('div');
     tl.className = 'today-line';
     tl.id = 'today-line';
-    tl.style.left = `${220 + todayCol * 18 + 9}px`;
-    rowsContainer.appendChild(tl);
+    tl.style.left = `calc(var(--name-w) + ${todayCol} * var(--week-w) + var(--week-w) / 2)`;
+    rowsWrap.appendChild(tl);
   }
 
-  scroll.appendChild(rowsContainer);
+  scroll.appendChild(rowsWrap);
 }
 
-function buildRow(crop, rowType, todayCol) {
-  const row = document.createElement('div');
-  row.className = `crop-row ${rowType}-row`;
-  row.style.position = 'relative';
+function buildBarsArea(bars, crop, todayCol) {
+  const area = document.createElement('div');
+  area.className = 'bars-area';
 
-  // Crop name cell
-  const nameCell = document.createElement('div');
-  nameCell.className = 'crop-name';
-  if (rowType === 'plant') {
-    nameCell.innerHTML = `<span class="crop-name-text">${crop.name}${crop.asterisk ? '<span class="asterisk"> ★</span>' : ''}</span>`;
-    nameCell.onclick = () => openDetailPanel(crop);
-  } else {
-    nameCell.innerHTML = `<span class="crop-name-text" style="opacity:0.3;font-size:11px"></span><span class="row-type-label">harvest</span>`;
-  }
-  row.appendChild(nameCell);
-
-  // Week cells with bars overlaid
-  const barsWrap = document.createElement('div');
-  barsWrap.style.cssText = 'position:relative; display:flex; flex:1; height:100%';
-
+  // Background cells
   for (let c = 0; c < 44; c++) {
     const cell = document.createElement('div');
-    cell.className = 'week-cell';
-    barsWrap.appendChild(cell);
+    cell.className = 'week-bg-cell';
+    area.appendChild(cell);
   }
 
-  // Filter bars for this row type
-  const relevantTypes = rowType === 'plant' ? ['G','S','T'] : ['H'];
-  const filteredBars = crop.bars.filter(b => relevantTypes.includes(b.type));
-
-  // Merge adjacent same-type bars into segments
-  filteredBars.forEach(b => {
+  // Bars
+  bars.forEach(b => {
     const bar = document.createElement('div');
     bar.className = `bar bar-${b.type}`;
-    bar.style.left = `${b.start * 18}px`;
-    bar.style.width = `${(b.end - b.start + 1) * 18 - 2}px`;
-
+    bar.style.left = `calc(${b.start} * var(--week-w))`;
+    bar.style.width = `calc(${b.end - b.start + 1} * var(--week-w) - 2px)`;
     bar.addEventListener('mouseenter', e => showTooltip(e, crop, b));
-    bar.addEventListener('mousemove', e => moveTooltip(e));
+    bar.addEventListener('mousemove', moveTooltip);
     bar.addEventListener('mouseleave', hideTooltip);
     bar.addEventListener('click', () => openDetailPanel(crop));
-    barsWrap.appendChild(bar);
+    area.appendChild(bar);
   });
 
-  row.appendChild(barsWrap);
-  return row;
+  return area;
 }
 
-// ─── TODAY ─────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// TODAY SCROLL
+// ═══════════════════════════════════════════════════════════
 function scrollToToday() {
-  const todayCol = getTodayColumn();
-  if (todayCol === null) return;
+  const col = getTodayColumn();
+  if (col === null) return;
   const wrapper = document.getElementById('calendar-wrapper');
-  const targetX = 220 + todayCol * 18 - wrapper.clientWidth / 2;
-  wrapper.scrollTo({ left: Math.max(0, targetX), behavior: 'smooth' });
+  const nameW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--name-w')) || 200;
+  const wW = currentZoom;
+  const target = nameW + col * wW - wrapper.clientWidth / 2 + wW;
+  wrapper.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
 }
 
-// ─── FILTER ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// FILTER
+// ═══════════════════════════════════════════════════════════
 let currentFilter = 'all';
-
 function setFilter(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   applyFilters();
 }
-
-function filterCrops(q) {
-  applyFilters(q);
-}
-
+function filterCrops(q) { applyFilters(q); }
 function applyFilters(searchQ) {
   const q = (searchQ !== undefined ? searchQ : document.getElementById('search-input').value).toLowerCase().trim();
-  const todayCol = getTodayColumn();
-
+  const col = getTodayColumn();
   CROPS.forEach(crop => {
-    const group = document.getElementById(`crop-${crop.name.replace(/[^a-z0-9]/gi, '-')}`);
+    const group = document.getElementById(`crop-${crop.name.replace(/[^a-z0-9]/gi,'-')}`);
     if (!group) return;
-
     let show = true;
-
     if (q && !crop.name.toLowerCase().includes(q)) show = false;
-
     if (show && currentFilter === 'cool') show = crop.season === 'cool';
     if (show && currentFilter === 'warm') show = crop.season === 'warm';
-
-    if (show && currentFilter === 'plant-now' && todayCol !== null) {
-      const plantBars = crop.bars.filter(b => ['G','S','T'].includes(b.type));
-      show = plantBars.some(b => todayCol >= b.start && todayCol <= b.end);
-    }
-
-    if (show && currentFilter === 'harvest-now' && todayCol !== null) {
-      const hBars = crop.bars.filter(b => b.type === 'H');
-      show = hBars.some(b => todayCol >= b.start && todayCol <= b.end);
-    }
-
+    if (show && currentFilter === 'plant-now' && col !== null)
+      show = crop.bars.some(b => ['G','S','T'].includes(b.type) && col >= b.start && col <= b.end);
+    if (show && currentFilter === 'harvest-now' && col !== null)
+      show = crop.bars.some(b => b.type === 'H' && col >= b.start && col <= b.end);
     group.classList.toggle('hidden', !show);
   });
 }
 
-// ─── TOOLTIP ──────────────────────────────────────────────────────────────────
-const TYPE_LABELS = { G:'Direct Sow', S:'Start Indoors', T:'Transplant Outside', H:'Harvest' };
-
+// ═══════════════════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════════════════
 function showTooltip(e, crop, bar) {
   const tt = document.getElementById('tooltip');
   document.getElementById('tt-crop').textContent = crop.name;
@@ -1748,50 +1510,84 @@ function showTooltip(e, crop, bar) {
 }
 function moveTooltip(e) {
   const tt = document.getElementById('tooltip');
-  tt.style.left = (e.clientX + 14) + 'px';
-  tt.style.top = (e.clientY - 30) + 'px';
+  const x = e.clientX + 14, y = e.clientY - 34;
+  tt.style.left = Math.min(x, window.innerWidth - 250) + 'px';
+  tt.style.top = Math.max(y, 8) + 'px';
 }
-function hideTooltip() {
-  document.getElementById('tooltip').classList.remove('visible');
+function hideTooltip() { document.getElementById('tooltip').classList.remove('visible'); }
+
+// ═══════════════════════════════════════════════════════════
+// CROP NOTES (localStorage)
+// ═══════════════════════════════════════════════════════════
+const NOTES_KEY = 'planting_crop_notes';
+function loadAllNotes() {
+  try { return JSON.parse(localStorage.getItem(NOTES_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveNote(cropName, text) {
+  const notes = loadAllNotes();
+  if (text.trim()) notes[cropName] = text.trim();
+  else delete notes[cropName];
+  localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
 }
 
-// ─── DETAIL PANEL ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════════
 function openDetailPanel(crop) {
-  const todayCol = getTodayColumn();
+  const col = getTodayColumn();
   const plantBars = crop.bars.filter(b => ['G','S','T'].includes(b.type));
   const harvestBars = crop.bars.filter(b => b.type === 'H');
-
-  const isPlantNow = todayCol !== null && plantBars.some(b => todayCol >= b.start && todayCol <= b.end);
-  const isHarvestNow = todayCol !== null && harvestBars.some(b => todayCol >= b.start && todayCol <= b.end);
+  const isPlantNow = col !== null && plantBars.some(b => col >= b.start && col <= b.end);
+  const isHarvestNow = col !== null && harvestBars.some(b => col >= b.start && col <= b.end);
 
   let statusHTML = '';
   if (isPlantNow) {
-    statusHTML = `<div class="status-indicator status-now-plant">🌱 <strong>Plant this week!</strong> Conditions are right to plant ${crop.name} now.</div>`;
+    statusHTML = `<div class="status-indicator status-now-plant">🌱 <strong>Plant this week!</strong> Conditions are right for ${crop.name}.</div>`;
   } else if (isHarvestNow) {
-    statusHTML = `<div class="status-indicator status-now-harvest">🌾 <strong>Harvest time!</strong> ${crop.name} should be ready to harvest.</div>`;
+    statusHTML = `<div class="status-indicator status-now-harvest">🌾 <strong>Harvest time!</strong> ${crop.name} should be ready.</div>`;
   } else {
-    // Find next plant window
-    const nextPlant = plantBars.find(b => todayCol !== null && b.start > todayCol);
-    statusHTML = nextPlant
-      ? `<div class="status-indicator status-wait">⏳ Next planting: ${getWeekLabel(nextPlant.start)}</div>`
-      : `<div class="status-indicator status-wait">📅 See chart for timing</div>`;
+    const next = plantBars.find(b => col !== null && b.start > col);
+    statusHTML = next
+      ? `<div class="status-indicator status-wait">⏳ Next planting window: ${getWeekLabel(next.start)}</div>`
+      : `<div class="status-indicator status-wait">📅 See chart above for timing</div>`;
   }
 
-  // Timing grid
-  const timingHTML = crop.bars.slice(0, 6).map(b => `
+  const timingHTML = crop.bars.map(b => `
     <div class="timing-card">
-      <div class="timing-card .tc-label tc-${b.type}" style="color:var(--${b.type})">${TYPE_LABELS[b.type]}</div>
-      <div class="timing-card .tc-value">${getWeekLabel(b.start)}<br><small style="opacity:0.6">→ ${getWeekLabel(b.end)}</small></div>
+      <div class="timing-card tc-label" style="color:var(--${b.type})">${TYPE_LABELS[b.type]}</div>
+      <div class="tc-value">${getWeekLabel(b.start)}<br><small style="opacity:.55">→ ${getWeekLabel(b.end)}</small></div>
     </div>`).join('');
 
-  const linksHTML = crop.links.map(l => `
-    <a class="panel-link" href="${l.url}" target="_blank" rel="noopener">
-      <span class="link-icon">🔗</span>${l.label}
-    </a>`).join('');
+  const comp = COMPANIONS[crop.name];
+  let companionHTML = '';
+  if (comp) {
+    companionHTML = `
+      <div class="panel-section">
+        <div class="panel-section-title">Companion Planting</div>
+        <div class="companion-list">
+          ${comp.good.map(p=>`<span class="companion-tag companion-good">✓ ${p}</span>`).join('')}
+          ${comp.bad.map(p=>`<span class="companion-tag companion-bad">✗ ${p}</span>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  const notes = loadAllNotes();
+  const savedNote = notes[crop.name] || '';
+
+  const linksHTML = [
+    // Dynamic UME search link for this specific crop
+    `<a class="panel-link" href="https://hgic.umd.edu/search/?q=${encodeURIComponent(crop.name.replace(/[,*]/g,'').trim())}" target="_blank" rel="noopener noreferrer"><span style="font-size:14px">🌿</span>UMD Home &amp; Garden: ${crop.name}</a>`,
+    // Crop-specific AllRecipes search
+    `<a class="panel-link" href="https://www.allrecipes.com/search?q=${encodeURIComponent(crop.name.replace(/[,*()\[\]]/g,'').trim())}" target="_blank" rel="noopener noreferrer"><span style="font-size:14px">🍽</span>${crop.name} recipes — AllRecipes</a>`,
+    // Any extra links from the data
+    ...crop.links.filter(l => !l.url.includes('extension.umd.edu/food/grow-it-eat-it/vegetables') || crop.links.indexOf(l) > 0)
+      .map(l => `<a class="panel-link" href="${l.url}" target="_blank" rel="noopener noreferrer"><span style="font-size:14px">🔗</span>${l.label}</a>`)
+  ].join('');
 
   document.getElementById('detail-content').innerHTML = `
-    <div class="panel-crop-name">${crop.name}${crop.asterisk ? ' <span style="color:var(--harvest);font-size:20px">★</span>' : ''}</div>
-    <span class="panel-season-badge ${crop.season === 'cool' ? 'badge-cool' : 'badge-warm'}">${crop.season === 'cool' ? '❄️ Cool Season' : '☀️ Warm Season'}</span>
+    <div class="panel-crop-name">${crop.name}${crop.asterisk ? ' <span style="color:var(--harvest);font-size:18px">★</span>' : ''}</div>
+    <span class="panel-season-badge ${crop.season==='cool'?'badge-cool':'badge-warm'}">${crop.season==='cool'?'❄️ Cool Season':'☀️ Warm Season'}</span>
     ${statusHTML}
     <div class="panel-section">
       <div class="panel-section-title">About Planting</div>
@@ -1805,6 +1601,16 @@ function openDetailPanel(crop) {
       <div class="panel-section-title">Timing</div>
       <div class="panel-timing-grid">${timingHTML}</div>
     </div>
+    ${companionHTML}
+    <div class="panel-section">
+      <div class="panel-section-title">My Notes</div>
+      <textarea class="crop-note-area" id="note-area-${crop.name.replace(/[^a-z0-9]/gi,'-')}"
+        placeholder="e.g. planted row 3 on May 10, used Cherokee Purple variety…">${savedNote}</textarea>
+      <div style="display:flex;align-items:center">
+        <button class="save-note-btn" onclick="saveNoteUI('${crop.name}')">Save Note</button>
+        <span class="note-saved-msg" id="note-msg-${crop.name.replace(/[^a-z0-9]/gi,'-')}">✓ Saved</span>
+      </div>
+    </div>
     <div class="panel-section">
       <div class="panel-section-title">Learn More</div>
       <div class="panel-links">${linksHTML}</div>
@@ -1815,49 +1621,128 @@ function openDetailPanel(crop) {
   document.getElementById('overlay').classList.add('show');
 }
 
+function saveNoteUI(cropName) {
+  const id = cropName.replace(/[^a-z0-9]/gi,'-');
+  const area = document.getElementById(`note-area-${id}`);
+  if (!area) return;
+  saveNote(cropName, area.value);
+  const msg = document.getElementById(`note-msg-${id}`);
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2000);
+  // Rebuild to update dot indicator
+  buildCalendar();
+  applyFilters();
+}
+
 function closeDetailPanel() {
   document.getElementById('detail-panel').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
 }
 
-function closeAllPanels() {
-  closeDetailPanel();
-  if (document.getElementById('weather-history').classList.contains('open')) toggleWeatherPanel();
-}
-
-// ─── WEATHER ──────────────────────────────────────────────────────────────────
-const WEATHER_KEY = 'planting_weather_log';
-
-function loadWeatherLog() {
-  try { return JSON.parse(localStorage.getItem(WEATHER_KEY)) || []; }
+// ═══════════════════════════════════════════════════════════
+// MY GARDEN
+// ═══════════════════════════════════════════════════════════
+const GARDEN_KEY = 'planting_my_garden';
+function loadGardenLog() {
+  try { return JSON.parse(localStorage.getItem(GARDEN_KEY)) || []; }
   catch { return []; }
 }
-function saveWeatherLog(log) {
-  localStorage.setItem(WEATHER_KEY, JSON.stringify(log));
+function saveGardenLog(log) { localStorage.setItem(GARDEN_KEY, JSON.stringify(log)); }
+
+function populateGardenSelect() {
+  const sel = document.getElementById('garden-crop-select');
+  sel.innerHTML = '<option value="">Choose a crop…</option>';
+  CROPS.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name; opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
 }
+
+function addGardenEntry() {
+  const crop = document.getElementById('garden-crop-select').value;
+  const date = document.getElementById('garden-plant-date').value;
+  if (!crop || !date) return;
+  const log = loadGardenLog();
+  log.push({ id: Date.now(), crop, plantedDate: date });
+  saveGardenLog(log);
+  renderGardenEntries();
+  buildDigest();
+  document.getElementById('garden-crop-select').value = '';
+}
+
+function deleteGardenEntry(id) {
+  saveGardenLog(loadGardenLog().filter(e => e.id !== id));
+  renderGardenEntries();
+  buildDigest();
+}
+
+function renderGardenEntries() {
+  const log = loadGardenLog();
+  const container = document.getElementById('garden-entries');
+  if (log.length === 0) {
+    container.innerHTML = `<div class="garden-empty">Your garden is empty!<br>Add crops you've planted to track countdown to harvest.</div>`;
+    return;
+  }
+  const today = new Date();
+  container.innerHTML = log.map(e => {
+    const dth = DTH[e.crop] || 75;
+    const planted = new Date(e.plantedDate);
+    const harvestDate = new Date(planted.getTime() + dth * 86400000);
+    const daysLeft = Math.round((harvestDate - today) / 86400000);
+    const harvestStr = harvestDate.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    let countdownHTML = '';
+    if (daysLeft > 0) {
+      countdownHTML = `<span class="ge-countdown gc-harvest">🌾 ~${daysLeft} days to harvest (${harvestStr})</span>`;
+    } else if (daysLeft >= -14) {
+      countdownHTML = `<span class="ge-countdown gc-ready">✅ Ready to harvest!</span>`;
+    } else {
+      countdownHTML = `<span class="ge-countdown gc-past">📦 Harvest season past</span>`;
+    }
+    return `
+      <div class="garden-entry">
+        <div class="garden-entry-info">
+          <div class="ge-crop">${e.crop}</div>
+          <div class="ge-planted">Planted ${new Date(e.plantedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+          ${countdownHTML}
+        </div>
+        <button class="ge-delete" onclick="deleteGardenEntry(${e.id})">✕</button>
+      </div>`;
+  }).join('');
+}
+
+let gardenPanelOpen = false;
+function toggleGardenPanel() {
+  gardenPanelOpen = !gardenPanelOpen;
+  document.getElementById('my-garden-panel').classList.toggle('open', gardenPanelOpen);
+  document.getElementById('overlay').classList.toggle('show', gardenPanelOpen);
+  if (gardenPanelOpen) renderGardenEntries();
+}
+
+// ═══════════════════════════════════════════════════════════
+// WEATHER
+// ═══════════════════════════════════════════════════════════
+const WEATHER_KEY = 'planting_weather_log';
+function loadWeatherLog() { try { return JSON.parse(localStorage.getItem(WEATHER_KEY)) || []; } catch { return []; } }
+function saveWeatherLog(log) { localStorage.setItem(WEATHER_KEY, JSON.stringify(log)); }
 
 function addWeatherEntry() {
   const date = document.getElementById('wl-date').value;
   const temp = document.getElementById('wl-temp').value;
   const note = document.getElementById('wl-note').value;
   if (!date || !temp) return;
-
   const log = loadWeatherLog();
   log.push({ date, temp: parseFloat(temp), note, id: Date.now() });
   log.sort((a,b) => a.date.localeCompare(b.date));
   saveWeatherLog(log);
   renderWeatherEntries();
-
   document.getElementById('wl-temp').value = '';
   document.getElementById('wl-note').value = '';
-
-  // Update widget
   updateWeatherWidget(parseFloat(temp), note);
 }
 
 function deleteWeatherEntry(id) {
-  const log = loadWeatherLog().filter(e => e.id !== id);
-  saveWeatherLog(log);
+  saveWeatherLog(loadWeatherLog().filter(e => e.id !== id));
   renderWeatherEntries();
 }
 
@@ -1865,24 +1750,20 @@ function renderWeatherEntries() {
   const log = loadWeatherLog();
   const container = document.getElementById('weather-entries');
   if (log.length === 0) {
-    container.innerHTML = `<p style="color:rgba(200,180,140,0.4);font-size:12px;padding:20px 0">No weather entries yet. Log today's conditions above.</p>`;
+    container.innerHTML = `<p style="color:rgba(200,180,140,.4);font-size:11px;padding:18px 0">No entries yet. Log today's temperature above.</p>`;
     drawWeatherChart([]);
     return;
   }
-
   container.innerHTML = log.slice().reverse().map(e => `
     <div class="weather-entry">
       <span class="we-date">${e.date}</span>
       <span class="we-temp">${e.temp}°</span>
-      <span class="we-note">${e.note || '—'}</span>
+      <span class="we-note">${e.note||'—'}</span>
       <button class="we-delete" onclick="deleteWeatherEntry(${e.id})">✕</button>
     </div>`).join('');
-
   drawWeatherChart(log.slice(-30));
-
-  // Update widget with most recent
-  const recent = log[log.length - 1];
-  updateWeatherWidget(recent.temp, recent.note);
+  const r = log[log.length-1];
+  updateWeatherWidget(r.temp, r.note);
 }
 
 function updateWeatherWidget(temp, note) {
@@ -1894,71 +1775,90 @@ function updateWeatherWidget(temp, note) {
 function drawWeatherChart(entries) {
   const canvas = document.getElementById('weather-canvas');
   const ctx = canvas.getContext('2d');
-  const W = canvas.offsetWidth || 380;
-  const H = 100;
+  const W = canvas.parentElement.clientWidth - 44 || 380;
+  const H = 90;
   canvas.width = W; canvas.height = H;
-
   ctx.clearRect(0, 0, W, H);
-
   if (entries.length < 2) {
-    ctx.fillStyle = 'rgba(200,180,140,0.2)';
-    ctx.font = '11px DM Mono, monospace';
-    ctx.fillText('Log more entries to see chart', 20, 50);
-    return;
+    ctx.fillStyle = 'rgba(200,180,140,.2)'; ctx.font = '10px DM Mono,monospace';
+    ctx.fillText('Log more entries to see chart', 12, H/2); return;
   }
-
-  const temps = entries.map(e => e.temp);
-  const min = Math.min(...temps) - 5;
-  const max = Math.max(...temps) + 5;
-  const xStep = W / (entries.length - 1);
-
-  // Grid lines
-  ctx.strokeStyle = 'rgba(180,160,120,0.1)';
-  ctx.lineWidth = 1;
+  const temps = entries.map(e=>e.temp);
+  const min = Math.min(...temps)-8, max = Math.max(...temps)+8;
+  const xS = W/(entries.length-1);
   [32,50,70,90].forEach(t => {
-    if (t >= min && t <= max) {
-      const y = H - ((t - min) / (max - min)) * H;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      ctx.fillStyle = 'rgba(180,160,120,0.35)';
-      ctx.font = '8px DM Mono';
-      ctx.fillText(`${t}°`, 2, y - 2);
-    }
+    if(t<min||t>max) return;
+    const y = H-((t-min)/(max-min))*H;
+    ctx.strokeStyle='rgba(180,160,120,.12)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    ctx.fillStyle='rgba(180,160,120,.35)'; ctx.font='8px DM Mono';
+    ctx.fillText(`${t}°`,2,y-2);
   });
-
+  // Fill under line
+  ctx.beginPath();
+  entries.forEach((e,i)=>{ const x=i*xS,y=H-((e.temp-min)/(max-min))*H; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.lineTo((entries.length-1)*xS,H); ctx.lineTo(0,H); ctx.closePath();
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(212,168,83,0.25)'); grad.addColorStop(1,'rgba(212,168,83,0)');
+  ctx.fillStyle=grad; ctx.fill();
   // Line
   ctx.beginPath();
-  entries.forEach((e, i) => {
-    const x = i * xStep;
-    const y = H - ((e.temp - min) / (max - min)) * H;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.strokeStyle = 'rgba(212,168,83,0.8)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
+  entries.forEach((e,i)=>{ const x=i*xS,y=H-((e.temp-min)/(max-min))*H; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle='rgba(212,168,83,.85)'; ctx.lineWidth=2; ctx.stroke();
   // Dots
-  entries.forEach((e, i) => {
-    const x = i * xStep;
-    const y = H - ((e.temp - min) / (max - min)) * H;
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#D4A853';
-    ctx.fill();
+  entries.forEach((e,i)=>{
+    ctx.beginPath(); ctx.arc(i*xS,H-((e.temp-min)/(max-min))*H,3,0,Math.PI*2);
+    ctx.fillStyle='#D4A853'; ctx.fill();
   });
 }
 
 let weatherPanelOpen = false;
 function toggleWeatherPanel() {
-  const panel = document.getElementById('weather-history');
   weatherPanelOpen = !weatherPanelOpen;
-  panel.classList.toggle('open', weatherPanelOpen);
+  document.getElementById('weather-history').classList.toggle('open', weatherPanelOpen);
   document.getElementById('overlay').classList.toggle('show', weatherPanelOpen);
   if (weatherPanelOpen) renderWeatherEntries();
 }
 
-// ─── AI ASSISTANT ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// PRINT
+// ═══════════════════════════════════════════════════════════
+function printCalendar() {
+  // Close all panels first
+  closeDetailPanel();
+  if (weatherPanelOpen) toggleWeatherPanel();
+  if (gardenPanelOpen) toggleGardenPanel();
+  // Small delay to let panels close before print dialog
+  setTimeout(() => window.print(), 150);
+}
+
+// ═══════════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('planting_theme', isLight ? 'light' : 'dark');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PANEL MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function closeAllPanels() {
+  closeDetailPanel();
+  if (weatherPanelOpen) toggleWeatherPanel();
+  if (gardenPanelOpen) toggleGardenPanel();
+}
+function closeDetailPanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI ASSISTANT
+// ═══════════════════════════════════════════════════════════
 let aiOpen = false;
-const aiMessages = [{ role:'assistant', content:'Hello! I\'m your Central Maryland planting assistant. Ask me anything — what to plant this week, how to care for a crop, when to expect your harvest, or advice on weather and timing.' }];
+const aiMsgs = [{ role:'assistant', content:'Hello! I\'m your Maryland garden assistant. Ask me what to plant this week, companion planting tips, how to care for a specific crop, or anything about your garden.' }];
 
 function toggleAI() {
   aiOpen = !aiOpen;
@@ -1969,103 +1869,85 @@ async function sendAI() {
   const input = document.getElementById('ai-input');
   const msg = input.value.trim();
   if (!msg) return;
+  input.value = ''; input.style.height = 'auto';
+  aiMsgs.push({ role:'user', content: msg });
+  renderAIMsgs(); scrollAIDown();
 
-  input.value = '';
-  input.style.height = 'auto';
+  const thinkId = 'think-' + Date.now();
+  appendAIMsg({ role:'assistant', content:'…', id:thinkId, thinking:true });
 
-  aiMessages.push({ role:'user', content: msg });
-  renderAIMessages();
-  scrollAIToBottom();
+  const col = getTodayColumn();
+  const plantNow = col !== null ? CROPS.filter(c=>c.bars.some(b=>['G','S','T'].includes(b.type)&&col>=b.start&&col<=b.end)).map(c=>c.name).join(', ') : 'unknown';
+  const harvestNow = col !== null ? CROPS.filter(c=>c.bars.some(b=>b.type==='H'&&col>=b.start&&col<=b.end)).map(c=>c.name).join(', ') : 'unknown';
+  const weather = loadWeatherLog().slice(-5).map(e=>`${e.date}: ${e.temp}°F${e.note?' ('+e.note+')':''}`).join('; ');
+  const garden = loadGardenLog().map(e=>`${e.crop} planted ${e.plantedDate}`).join('; ');
+  const notes = loadAllNotes();
+  const notesSummary = Object.entries(notes).map(([k,v])=>`${k}: "${v}"`).join('; ');
 
-  // Thinking indicator
-  const thinkingId = 'thinking-' + Date.now();
-  appendAIMessage({ role:'assistant', content:'…', id: thinkingId, thinking: true });
-
-  const todayCol = getTodayColumn();
-  const todayLabel = todayCol !== null ? getWeekLabel(todayCol) : 'unknown';
-  const weatherLog = loadWeatherLog().slice(-7).map(e => `${e.date}: ${e.temp}°F${e.note ? ' ('+e.note+')' : ''}`).join('\n');
-
-  // What's plantable now
-  const plantNow = CROPS.filter(crop => {
-    if (todayCol === null) return false;
-    return crop.bars.some(b => ['G','S','T'].includes(b.type) && todayCol >= b.start && todayCol <= b.end);
-  }).map(c=>c.name).join(', ') || 'none currently';
-
-  const harvestNow = CROPS.filter(crop => {
-    if (todayCol === null) return false;
-    return crop.bars.some(b => b.type === 'H' && todayCol >= b.start && todayCol <= b.end);
-  }).map(c=>c.name).join(', ') || 'none currently';
-
-  const systemPrompt = `You are a friendly, knowledgeable vegetable gardening assistant for Central Maryland (last frost May 1, first frost Oct 31). 
-Today is ${formatToday()} (${todayLabel} in the planting calendar).
-Currently plantable crops: ${plantNow}.
-Currently harvestable crops: ${harvestNow}.
-Recent weather log: ${weatherLog || 'none logged'}.
-Answer concisely and practically. Reference specific crops, timing, and local conditions. When relevant, suggest checking the interactive calendar on screen.`;
+  const system = `You are a friendly, knowledgeable vegetable gardening assistant for Central Maryland (last frost May 1, first frost Oct 31, USDA zone 7).
+Today: ${formatToday()}.
+Currently plantable: ${plantNow}.
+Currently harvestable: ${harvestNow}.
+User's weather log: ${weather||'none'}.
+User's garden: ${garden||'nothing tracked'}.
+User's crop notes: ${notesSummary||'none'}.
+Answer concisely and practically. Use markdown-style bold (**text**) for key info. Be specific to Maryland conditions and timing.`;
 
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: aiMessages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-10)
+        model:'claude-sonnet-4-20250514', max_tokens:1000, system,
+        messages: aiMsgs.filter(m=>m.role==='user'||m.role==='assistant').slice(-10)
       })
     });
-
     const data = await resp.json();
-    const answer = data.content?.[0]?.text || 'Sorry, I had trouble responding.';
-
-    // Remove thinking
-    const thinking = document.getElementById(thinkingId);
-    if (thinking) thinking.remove();
-
-    aiMessages.push({ role:'assistant', content: answer });
-    appendAIMessage({ role:'assistant', content: answer });
-    scrollAIToBottom();
-  } catch(err) {
-    const thinking = document.getElementById(thinkingId);
-    if (thinking) thinking.remove();
-    appendAIMessage({ role:'assistant', content: 'Connection error. Please try again.' });
+    const answer = data.content?.[0]?.text || 'Sorry, had trouble responding.';
+    document.getElementById(thinkId)?.remove();
+    aiMsgs.push({ role:'assistant', content: answer });
+    appendAIMsg({ role:'assistant', content: answer });
+    scrollAIDown();
+  } catch {
+    document.getElementById(thinkId)?.remove();
+    appendAIMsg({ role:'assistant', content:'Connection error. Try again.' });
   }
 }
 
-function renderAIMessages() {
-  const container = document.getElementById('ai-messages');
-  container.innerHTML = '';
-  aiMessages.forEach(m => appendAIMessage(m));
+function renderAIMsgs() {
+  document.getElementById('ai-messages').innerHTML = '';
+  aiMsgs.forEach(m => appendAIMsg(m));
 }
-
-function appendAIMessage(m) {
-  const container = document.getElementById('ai-messages');
-  const div = document.createElement('div');
-  div.className = `ai-msg ${m.role}${m.thinking ? ' thinking' : ''}`;
-  if (m.id) div.id = m.id;
-  div.textContent = m.content;
-  container.appendChild(div);
-}
-
-function scrollAIToBottom() {
+function appendAIMsg(m) {
   const c = document.getElementById('ai-messages');
-  c.scrollTop = c.scrollHeight;
+  const div = document.createElement('div');
+  div.className = `ai-msg ${m.role}${m.thinking?' thinking':''}`;
+  if (m.id) div.id = m.id;
+  // Simple bold rendering
+  div.innerHTML = m.content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g,'<br>');
+  c.appendChild(div);
+}
+function scrollAIDown() { const c=document.getElementById('ai-messages'); c.scrollTop=c.scrollHeight; }
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.getElementById('today-display').textContent = formatToday();
+document.getElementById('wl-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('garden-plant-date').value = new Date().toISOString().split('T')[0];
+
+// Restore theme
+if (localStorage.getItem('planting_theme') === 'light') {
+  document.body.classList.add('light');
+  document.getElementById('theme-btn').textContent = '🌙';
 }
 
-// ─── INIT ──────────────────────────────────────────────────────────────────────
-document.getElementById('today-display').textContent = formatToday();
-
-// Set default weather log date to today
-const todayStr = new Date().toISOString().split('T')[0];
-document.getElementById('wl-date').value = todayStr;
-
+buildFrostBanner();
 buildCalendar();
-
-// Auto-scroll to show today after a moment
-setTimeout(scrollToToday, 400);
-
-// Load any saved weather
+buildDigest();
+populateGardenSelect();
 renderWeatherEntries();
+
+setTimeout(scrollToToday, 500);
 </script>
 </body>
 </html>
